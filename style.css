@@ -1,0 +1,410 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+  background: #0d0d1f;
+  color: #d0d0d8;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+  background: #141428;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #1e1e3a;
+  flex-shrink: 0;
+  z-index: 10;
+  min-height: 50px;
+}
+
+header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e8e8f0;
+}
+
+header h1 span {
+  color: #e94560;
+}
+
+header .badge {
+  font-size: 10px;
+  background: #1e1e3a;
+  color: #888;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #2a2a4a;
+}
+
+.tabs {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.tab-btn {
+  padding: 6px 16px;
+  border: 1px solid #2a2a4a;
+  border-radius: 5px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  background: #1a1a35;
+  color: #ccc;
+}
+
+.tab-btn.active {
+  background: #e94560;
+  color: #fff;
+  border-color: #e94560;
+}
+
+.rotate-btn {
+  padding: 6px 12px;
+  border: 1px solid #2a2a4a;
+  border-radius: 5px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  margin-left: 4px;
+}
+
+.rotate-btn:hover {
+  background: #1a1a35;
+  color: #ccc;
+}
+
+.rotate-btn.on {
+  background: #2a4a2a;
+  color: #4fc34f;
+  border-color: #4fc34f;
+}
+
+.header-link {
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.header-link:hover {
+  color: #e94560;
+}
+
+/* ── Main Layout ── */
+.main-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Viewport ── */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #0b0b1a;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Loading ── */
+#loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0b0b1a;
+  z-index: 20;
+  transition: opacity 0.5s;
+}
+
+#loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #1e1e3a;
+  border-top-color: #e94560;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#loading p {
+  margin-top: 12px;
+  color: #555;
+  font-size: 13px;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 220px;
+  background: #111128;
+  border-left: 1px solid #1e1e3a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #1a1a35;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-header .count {
+  color: #444;
+  font-size: 10px;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #2a2a4a;
+  border-radius: 2px;
+}
+
+.block-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #999;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+
+.block-item:hover {
+  background: #1a1a35;
+  color: #ccc;
+}
+
+.block-item.active {
+  background: rgba(233, 69, 96, 0.1);
+  border-left-color: #e94560;
+  color: #fff;
+}
+
+.block-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.block-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-mod {
+  font-size: 10px;
+  color: #555;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Tooltip (mcmod-style info card) ── */
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+#tooltip.visible {
+  opacity: 1;
+}
+
+#tooltip.pinned {
+  pointer-events: auto;
+}
+
+.tooltip-inner {
+  background: #141428;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  max-width: 280px;
+  overflow: hidden;
+}
+
+.tooltip-head {
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tooltip-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tooltip-mod {
+  font-size: 11px;
+  color: #e94560;
+  margin-top: 1px;
+}
+
+.tooltip-body {
+  padding: 8px 14px 10px;
+}
+
+.tooltip-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.tooltip-id {
+  font-size: 10px;
+  color: #444;
+  margin-top: 5px;
+  font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+}
+
+.tooltip-code {
+  margin-top: 8px;
+  background: #0a0a1a;
+  border: 1px solid #1a1a3a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tooltip-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  background: #0f0f25;
+  font-size: 10px;
+  color: #666;
+  border-bottom: 1px solid #1a1a3a;
+}
+
+.tooltip-code-header button {
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  color: #888;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tooltip-code-header button:hover {
+  background: #2a4a2a;
+  border-color: #4fc34f;
+  color: #4fc34f;
+}
+
+.tooltip-code pre {
+  margin: 0;
+  padding: 8px 10px;
+  font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #b0b0c0;
+  overflow-x: auto;
+  white-space: pre;
+  user-select: text;
+  cursor: text;
+}
+
+.tooltip-code pre::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tooltip-code pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tooltip-code pre::-webkit-scrollbar-thumb {
+  background: #2a2a4a;
+  border-radius: 2px;
+}
+
+.tooltip-code pre::-webkit-scrollbar-thumb:hover {
+  background: #3a3a5a;
+}
+
+/* ── Bottom hint ── */
+.hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #444;
+  font-size: 11px;
+  z-index: 5;
+  background: rgba(11, 11, 26, 0.85);
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid #1e1e3a;
+  pointer-events: none;
+  white-space: nowrap;
+}

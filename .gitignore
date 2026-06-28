@@ -1,2 +1,4 @@
 node_modules/
 imbue_*.png
+package.json
+package-lock.json

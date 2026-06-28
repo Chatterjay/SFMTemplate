@@ -5,418 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SFM 模板 — 3D 布局查看器</title>
-  <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
-      background: #0d0d1f;
-      color: #d0d0d8;
-      overflow: hidden;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Header ── */
-    header {
-      background: #141428;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      border-bottom: 1px solid #1e1e3a;
-      flex-shrink: 0;
-      z-index: 10;
-      min-height: 50px;
-    }
-
-    header h1 {
-      font-size: 16px;
-      font-weight: 700;
-      color: #e8e8f0;
-    }
-
-    header h1 span {
-      color: #e94560;
-    }
-
-    header .badge {
-      font-size: 10px;
-      background: #1e1e3a;
-      color: #888;
-      padding: 2px 8px;
-      border-radius: 4px;
-      border: 1px solid #2a2a4a;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 3px;
-      margin-left: auto;
-    }
-
-    .tab-btn {
-      padding: 6px 16px;
-      border: 1px solid #2a2a4a;
-      border-radius: 5px;
-      background: transparent;
-      color: #777;
-      cursor: pointer;
-      font-size: 13px;
-      transition: all 0.2s;
-    }
-
-    .tab-btn:hover {
-      background: #1a1a35;
-      color: #ccc;
-    }
-
-    .tab-btn.active {
-      background: #e94560;
-      color: #fff;
-      border-color: #e94560;
-    }
-
-    .rotate-btn {
-      padding: 6px 12px;
-      border: 1px solid #2a2a4a;
-      border-radius: 5px;
-      background: transparent;
-      color: #777;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
-      margin-left: 4px;
-    }
-
-    .rotate-btn:hover {
-      background: #1a1a35;
-      color: #ccc;
-    }
-
-    .rotate-btn.on {
-      background: #2a4a2a;
-      color: #4fc34f;
-      border-color: #4fc34f;
-    }
-
-    .header-link {
-      font-size: 11px;
-      color: #555;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .header-link:hover {
-      color: #e94560;
-    }
-
-    /* ── Main Layout ── */
-    .main-layout {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-
-    /* ── Viewport ── */
-    #canvas-container {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      background: #0b0b1a;
-    }
-
-    #canvas-container canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* ── Loading ── */
-    #loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #0b0b1a;
-      z-index: 20;
-      transition: opacity 0.5s;
-    }
-
-    #loading.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #1e1e3a;
-      border-top-color: #e94560;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    #loading p {
-      margin-top: 12px;
-      color: #555;
-      font-size: 13px;
-    }
-
-    /* ── Sidebar ── */
-    #sidebar {
-      width: 220px;
-      background: #111128;
-      border-left: 1px solid #1e1e3a;
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 5;
-      overflow: hidden;
-    }
-
-    .sidebar-header {
-      padding: 10px 14px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid #1a1a35;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .sidebar-header .count {
-      color: #444;
-      font-size: 10px;
-    }
-
-    .sidebar-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 4px 0;
-    }
-
-    .sidebar-scroll::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .sidebar-scroll::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .sidebar-scroll::-webkit-scrollbar-thumb {
-      background: #2a2a4a;
-      border-radius: 2px;
-    }
-
-    .block-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 14px;
-      cursor: pointer;
-      font-size: 12px;
-      color: #999;
-      transition: all 0.15s;
-      border-left: 3px solid transparent;
-      user-select: none;
-    }
-
-    .block-item:hover {
-      background: #1a1a35;
-      color: #ccc;
-    }
-
-    .block-item.active {
-      background: rgba(233, 69, 96, 0.1);
-      border-left-color: #e94560;
-      color: #fff;
-    }
-
-    .block-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .block-name {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .block-mod {
-      font-size: 10px;
-      color: #555;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-
-    /* ── Tooltip (mcmod-style info card) ── */
-    #tooltip {
-      position: fixed;
-      pointer-events: none;
-      z-index: 100;
-      opacity: 0;
-      transition: opacity 0.12s;
-    }
-
-    #tooltip.visible {
-      opacity: 1;
-    }
-
-    #tooltip.pinned {
-      pointer-events: auto;
-    }
-
-    .tooltip-inner {
-      background: #141428;
-      border: 1px solid #2a2a4a;
-      border-radius: 8px;
-      padding: 0;
-      font-size: 13px;
-      line-height: 1.5;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-      max-width: 280px;
-      overflow: hidden;
-    }
-
-    .tooltip-head {
-      padding: 10px 14px 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .tooltip-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .tooltip-mod {
-      font-size: 11px;
-      color: #e94560;
-      margin-top: 1px;
-    }
-
-    .tooltip-body {
-      padding: 8px 14px 10px;
-    }
-
-    .tooltip-desc {
-      font-size: 12px;
-      color: #999;
-    }
-
-    .tooltip-id {
-      font-size: 10px;
-      color: #444;
-      margin-top: 5px;
-      font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-    }
-
-    .tooltip-code {
-      margin-top: 8px;
-      background: #0a0a1a;
-      border: 1px solid #1a1a3a;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .tooltip-code-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 10px;
-      background: #0f0f25;
-      font-size: 10px;
-      color: #666;
-      border-bottom: 1px solid #1a1a3a;
-    }
-
-    .tooltip-code-header button {
-      background: transparent;
-      border: 1px solid #2a2a4a;
-      color: #888;
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .tooltip-code-header button:hover {
-      background: #2a4a2a;
-      border-color: #4fc34f;
-      color: #4fc34f;
-    }
-
-    .tooltip-code pre {
-      margin: 0;
-      padding: 8px 10px;
-      font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-      font-size: 11px;
-      line-height: 1.4;
-      color: #b0b0c0;
-      overflow-x: auto;
-      white-space: pre;
-      user-select: text;
-      cursor: text;
-    }
-
-    .tooltip-code pre::-webkit-scrollbar {
-      height: 4px;
-    }
-
-    .tooltip-code pre::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .tooltip-code pre::-webkit-scrollbar-thumb {
-      background: #2a2a4a;
-      border-radius: 2px;
-    }
-
-    .tooltip-code pre::-webkit-scrollbar-thumb:hover {
-      background: #3a3a5a;
-    }
-
-    /* ── Bottom hint ── */
-    .hint {
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #444;
-      font-size: 11px;
-      z-index: 5;
-      background: rgba(11, 11, 26, 0.85);
-      padding: 5px 12px;
-      border-radius: 5px;
-      border: 1px solid #1e1e3a;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -468,121 +57,14 @@
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { getBlockInfo, getModColor, SFM_CODE_FILES, TAB_LABELS, buildVisibleBlockentitySet, buildAlphaClipSet, buildHiddenMeshSet } from './config.js';
 
-    /* ── Block Info Mapping ── */
-    const MOD_COLORS = {
-      "Ars Nouveau": "#e87d3e",
-      "Extended AE": "#4fc3f7",
-      "Minecraft": "#7c7c7c",
-      "Super Factory Manager": "#e94560",
-    };
+    const VISIBLE_BLOCKENTITIES = buildVisibleBlockentitySet();
+    const ALPHA_CLIP_MESHES = buildAlphaClipSet();
+    const HIDDEN_MESHES = buildHiddenMeshSet();
 
-    const BLOCK_INFO = {
-      "ars_nouveau:creative_source_jar": {
-        name: "创造之源罐", mod: "Ars Nouveau",
-        desc: "提供无限源能，为灌注 / 附魔装置供能"
-      },
-      "ars_nouveau:imbuement_chamber": {
-        name: "灌注室", mod: "Ars Nouveau",
-        desc: "灌注物品的核心机器，配合 SFM 自动化处理"
-      },
-      "blockentity:ars_nouveau:imbuement_chamber": {
-        name: "灌注室 (动态)", mod: "Ars Nouveau",
-        desc: "灌注室内部动态渲染层（旋转动画等）"
-      },
-      "extendedae:ex_pattern_provider": {
-        name: "扩展样板供应器", mod: "Extended AE",
-        desc: "AE2 自动合成样板供应，阻挡模式控制物品输出",
-        tabPatternProvider: true
-      },
-      "minecraft:barrel": {
-        name: "木桶", mod: "Minecraft",
-        desc: "物品暂存容器，SFM 管理的输入 / 输出缓冲"
-      },
-      "minecraft:white_concrete": {
-        name: "白色混凝土", mod: "Minecraft",
-        desc: "装饰 / 标记方块，用于区域标识"
-      },
-      "sfm:cable": {
-        name: "SFM 线缆", mod: "Super Factory Manager",
-        desc: "连接 SFM 管理器与各容器，传输物品信号"
-      },
-      "sfm:manager": {
-        name: "SFM 管理器", mod: "Super Factory Manager",
-        desc: "运行 SFM 自动化程序，控制物品流向",
-        tabSfmCode: true
-      },
-      "ars_nouveau:arcane_core_emissive": {
-        name: "奥术核心", mod: "Ars Nouveau",
-        desc: "附魔装置的核心组件，发光层"
-      },
-      "ars_nouveau:arcane_platform": {
-        name: "奥术平台", mod: "Ars Nouveau",
-        desc: "放置被附魔物品的平台基座"
-      },
-      "ars_nouveau:enchanting_apparatus": {
-        name: "附魔装置", mod: "Ars Nouveau",
-        desc: "附魔物品的主机器，需要周围 pedestal 配合"
-      },
-      "blockentity:ars_nouveau:arcane_core": {
-        name: "奥术核心 (实体)", mod: "Ars Nouveau",
-        desc: "奥术核心的方块实体渲染层"
-      },
-      "blockentity:ars_nouveau:enchanting_apparatus": {
-        name: "附魔装置 (实体)", mod: "Ars Nouveau",
-        desc: "附魔装置额外渲染层（旋转粒子等）"
-      },
-      "blockentity:ars_nouveau:enchanting_apparatus_2": {
-        name: "附魔装置 (实体)", mod: "Ars Nouveau",
-        desc: "附魔装置动态模型渲染"
-      }
-    };
-
-    // Build name lookup with and without colons (GLB from Blender strips them)
-    const BLOCK_LOOKUP = {};
-    for (const [key, val] of Object.entries(BLOCK_INFO)) {
-      BLOCK_LOOKUP[key] = val;
-      BLOCK_LOOKUP[key.replace(/:/g, '')] = val;
-    }
-
-    // Tab-specific data cache (灌注室 / 附魔装置)
-    const SFM_CODE_FILES = {
-      '灌注室': '1.21.1/灌注室代码.md',
-      '附魔装置': '1.21.1/附魔装置.md'
-    };
     const tabMdData = {};
-
-    // Block label numbers shown when focusing the SFM manager
-    // Edit these arrays to change which blocks get which labels
-    const TAB_LABELS = {
-      '灌注室': [
-        { label: '1', meshes: ['minecraft:barrel'] },
-        { label: '2', meshes: ['ars_nouveau:imbuement_chamber', 'blockentity:ars_nouveau:imbuement_chamber'] },
-        { label: '3', meshes: ['extendedae:ex_pattern_provider'] }
-      ],
-      '附魔装置': [
-        { label: '1', meshes: ['minecraft:barrel'] },
-        { label: '2', meshes: ['ars_nouveau:enchanting_apparatus', 'blockentity:ars_nouveau:enchanting_apparatus'] },
-        { label: '3', meshes: ['ars_nouveau:arcane_platform'] },
-        { label: '4', meshes: ['extendedae:ex_pattern_provider'] }
-      ]
-    };
     const labelSprites = [];
-
-    function getBlockInfo(name) {
-      const lookup = BLOCK_LOOKUP[name];
-      if (lookup) return lookup;
-      const parts = name.split(':');
-      return {
-        name: parts.length > 1 ? parts.pop().replace(/_/g, ' ') : name.replace(/_/g, ' '),
-        mod: parts.length > 1 ? parts.join(':') : '',
-        desc: ''
-      };
-    }
-
-    function getModColor(mod) {
-      return MOD_COLORS[mod] || '#888';
-    }
 
     /* ── DOM refs ── */
     const container = document.getElementById('canvas-container');
@@ -661,7 +143,6 @@
     /* ── Hover State ── */
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let hoveredMesh = null;
     let hoveredOriginalMaterials = null;
     let currentTooltipTarget = null;
     let tooltipPinned = false;
@@ -690,8 +171,7 @@
     }
 
     /* ── Tooltip ── */
-    function showTooltip(mesh, event) {
-      const info = getBlockInfo(mesh.name);
+    function buildTooltipHtml(info, meshName) {
       const md = tabMdData[activeModel];
       const sfmCode = info.sfmCode || (info.tabSfmCode && md ? md.sfmCode : null);
       const codeHtml = sfmCode ? `
@@ -710,18 +190,22 @@
       </div>
       <pre>${ppText}</pre>
     </div>` : '';
-      tooltipInner.innerHTML = `
+      return `
     <div class="tooltip-head">
       <div class="tooltip-name">${info.name}</div>
       <div class="tooltip-mod" style="color:${getModColor(info.mod)}">${info.mod}</div>
     </div>
     <div class="tooltip-body">
       ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
-      <div class="tooltip-id">${mesh.name}</div>
+      <div class="tooltip-id">${meshName}</div>
       ${codeHtml}
       ${ppHtml}
     </div>
   `;
+    }
+
+    function showTooltip(mesh, event) {
+      tooltipInner.innerHTML = buildTooltipHtml(getBlockInfo(mesh.name), mesh.name);
       positionTooltip(event);
       tooltipEl.classList.add('visible');
     }
@@ -952,37 +436,7 @@
       }
 
       // Show tooltip
-      const info = getBlockInfo(name);
-      const md = tabMdData[activeModel];
-      const sfmCode = info.sfmCode || (info.tabSfmCode && md ? md.sfmCode : null);
-      const codeHtml = sfmCode ? `
-    <div class="tooltip-code">
-      <div class="tooltip-code-header">
-        <span>SFM 代码</span>
-        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
-      </div>
-      <pre>${sfmCode}</pre>
-    </div>` : '';
-      const ppText = info.tabPatternProvider && md ? md.patternProvider : null;
-      const ppHtml = ppText ? `
-    <div class="tooltip-code">
-      <div class="tooltip-code-header">
-        <span>样板供应器设置</span>
-      </div>
-      <pre>${ppText}</pre>
-    </div>` : '';
-      tooltipInner.innerHTML = `
-    <div class="tooltip-head">
-      <div class="tooltip-name">${info.name}</div>
-      <div class="tooltip-mod" style="color:${getModColor(info.mod)}">${info.mod}</div>
-    </div>
-    <div class="tooltip-body">
-      ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
-      <div class="tooltip-id">${name}</div>
-      ${codeHtml}
-      ${ppHtml}
-    </div>
-  `;
+      tooltipInner.innerHTML = buildTooltipHtml(getBlockInfo(name), name);
       tooltipEl.style.left = (sidebarList.getBoundingClientRect().left - 296) + 'px';
       tooltipEl.style.top = '100px';
       tooltipEl.classList.add('visible', 'pinned');
@@ -1004,22 +458,18 @@
         group.traverse(child => {
           if (!child.isMesh) return;
           if (!child.name && child.parent?.name) child.name = child.parent.name;
-          // imbuement_chamber 外壳 UV 坍缩，移除；改用 blockentity 版本（内部正确模型）
-          if (child.name === 'ars_nouveau:imbuement_chamber' || child.name === 'ars_nouveauimbuement_chamber') {
+          // Hide outer shells with UV collapse (use blockentity version instead)
+          if (HIDDEN_MESHES.has(child.name)) {
             child.visible = false;
             return;
           }
-          // 其他 blockentity 网格仍隐藏（重叠导致 z-fighting）
-          if (child.name && child.name.startsWith('blockentity') &&
-            child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber' &&
-            child.name !== 'blockentity:ars_nouveau:enchanting_apparatus' && child.name !== 'blockentityars_nouveauenchanting_apparatus' &&
-            child.name !== 'blockentity:ars_nouveau:arcane_core' && child.name !== 'blockentityars_nouveauarcane_core') {
+          // Hide other blockentity meshes to avoid z-fighting
+          if (child.name && child.name.startsWith('blockentity') && !VISIBLE_BLOCKENTITIES.has(child.name)) {
             child.visible = false;
             return;
           }
-          // Alpha Clip: 裁掉纹理中的零 alpha 像素，防止 GLB BLEND 模式导致的穿透
-          if (child.name === 'ars_nouveau:creative_source_jar' || child.name === 'ars_nouveaucreative_source_jar' ||
-            child.name === 'blockentity:ars_nouveau:arcane_core' || child.name === 'blockentityars_nouveauarcane_core') {
+          // Alpha Clip for meshes with zero-alpha pixels in the atlas
+          if (ALPHA_CLIP_MESHES.has(child.name)) {
             child.material.alphaTest = 0.5;
             child.material.transparent = false;
             child.material.depthWrite = true;
@@ -1063,25 +513,23 @@
       if (currentScene) scene.remove(currentScene);
       allMeshes = [];
 
+      const collectMeshes = (group) => {
+        group.traverse(c => {
+          if (c.isMesh && (c.visible || VISIBLE_BLOCKENTITIES.has(c.name))) allMeshes.push(c);
+        });
+      };
+
       if (modelGroups[name]) {
         currentScene = modelGroups[name];
         scene.add(currentScene);
-        currentScene.traverse(c => {
-          if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
-            c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
-            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c);
-        });
+        collectMeshes(currentScene);
       } else {
         try {
           const group = await loadModel(name);
           modelGroups[name] = group;
           currentScene = group;
           scene.add(currentScene);
-          group.traverse(c => {
-            if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
-              c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
-              c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c);
-          });
+          collectMeshes(group);
         } catch (err) {
           console.error(err);
           loadingEl.querySelector('p').textContent = '模型加载失败，请刷新重试';
