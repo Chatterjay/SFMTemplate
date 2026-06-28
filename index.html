@@ -758,12 +758,15 @@
           }
           // 其他 blockentity 网格仍隐藏（重叠导致 z-fighting）
           if (child.name && child.name.startsWith('blockentity') &&
-              child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber') {
+              child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber' &&
+              child.name !== 'blockentity:ars_nouveau:enchanting_apparatus' && child.name !== 'blockentityars_nouveauenchanting_apparatus' &&
+              child.name !== 'blockentity:ars_nouveau:arcane_core' && child.name !== 'blockentityars_nouveauarcane_core') {
             child.visible = false;
             return;
           }
           // Alpha Clip: 裁掉纹理中的零 alpha 像素，防止 GLB BLEND 模式导致的穿透
-          if (child.name === 'ars_nouveau:creative_source_jar' || child.name === 'ars_nouveaucreative_source_jar') {
+          if (child.name === 'ars_nouveau:creative_source_jar' || child.name === 'ars_nouveaucreative_source_jar' ||
+              child.name === 'blockentity:ars_nouveau:arcane_core' || child.name === 'blockentityars_nouveauarcane_core') {
             child.material.alphaTest = 0.5;
             child.material.transparent = false;
             child.material.depthWrite = true;
@@ -809,14 +812,18 @@
       if (modelGroups[name]) {
         currentScene = modelGroups[name];
         scene.add(currentScene);
-        currentScene.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber')) allMeshes.push(c); });
+        currentScene.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
+            c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
+            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c); });
       } else {
         try {
           const group = await loadModel(name);
           modelGroups[name] = group;
           currentScene = group;
           scene.add(currentScene);
-          group.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber')) allMeshes.push(c); });
+          group.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
+            c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
+            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c); });
         } catch (err) {
           console.error(err);
           loadingEl.querySelector('p').textContent = '模型加载失败，请刷新重试';
@@ -825,6 +832,7 @@
       }
 
       activeModel = name;
+      localStorage.setItem('sfm_active_model', name);
       buildSidebar(allMeshes);
 
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -888,7 +896,12 @@
     animate();
 
     /* ── Start ── */
-    switchModel('灌注室');
+    // Restore last active tab from localStorage
+    const savedModel = localStorage.getItem('sfm_active_model') || '灌注室';
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.model === savedModel);
+    });
+    switchModel(savedModel);
   </script>
 </body>
 
