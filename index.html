@@ -284,6 +284,9 @@
     #tooltip.visible {
       opacity: 1;
     }
+    #tooltip.pinned {
+      pointer-events: auto;
+    }
 
     .tooltip-inner {
       background: #141428;
@@ -328,6 +331,72 @@
       color: #444;
       margin-top: 5px;
       font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+    }
+
+    .tooltip-code {
+      margin-top: 8px;
+      background: #0a0a1a;
+      border: 1px solid #1a1a3a;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .tooltip-code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 10px;
+      background: #0f0f25;
+      font-size: 10px;
+      color: #666;
+      border-bottom: 1px solid #1a1a3a;
+    }
+
+    .tooltip-code-header button {
+      background: transparent;
+      border: 1px solid #2a2a4a;
+      color: #888;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tooltip-code-header button:hover {
+      background: #2a4a2a;
+      border-color: #4fc34f;
+      color: #4fc34f;
+    }
+
+    .tooltip-code pre {
+      margin: 0;
+      padding: 8px 10px;
+      font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #b0b0c0;
+      overflow-x: auto;
+      white-space: pre;
+      user-select: text;
+      cursor: text;
+    }
+
+    .tooltip-code pre::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .tooltip-code pre::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .tooltip-code pre::-webkit-scrollbar-thumb {
+      background: #2a2a4a;
+      border-radius: 2px;
+    }
+
+    .tooltip-code pre::-webkit-scrollbar-thumb:hover {
+      background: #3a3a5a;
     }
 
     /* ── Bottom hint ── */
@@ -422,7 +491,8 @@
       },
       "extendedae:ex_pattern_provider": {
         name: "扩展样板供应器", mod: "Extended AE",
-        desc: "AE2 自动合成样板供应，阻挡模式控制物品输出"
+        desc: "AE2 自动合成样板供应，阻挡模式控制物品输出",
+        tabPatternProvider: true
       },
       "minecraft:barrel": {
         name: "木桶", mod: "Minecraft",
@@ -438,7 +508,8 @@
       },
       "sfm:manager": {
         name: "SFM 管理器", mod: "Super Factory Manager",
-        desc: "运行 SFM 自动化程序，控制物品流向"
+        desc: "运行 SFM 自动化程序，控制物品流向",
+        tabSfmCode: true
       },
       "ars_nouveau:arcane_core_emissive": {
         name: "奥术核心", mod: "Ars Nouveau",
@@ -466,9 +537,22 @@
       }
     };
 
+    // Build name lookup with and without colons (GLB from Blender strips them)
+    const BLOCK_LOOKUP = {};
+    for (const [key, val] of Object.entries(BLOCK_INFO)) {
+      BLOCK_LOOKUP[key] = val;
+      BLOCK_LOOKUP[key.replace(/:/g, '')] = val;
+    }
+
+    // Tab-specific data cache (灌注室 / 附魔装置)
+    const SFM_CODE_FILES = {
+      '灌注室': '1.21.1/灌注室代码.md',
+      '附魔装置': '1.21.1/附魔装置.md'
+    };
+    const tabMdData = {};
+
     function getBlockInfo(name) {
-      // Also try without colons (GLB from Blender strips them)
-      const lookup = BLOCK_INFO[name] || BLOCK_INFO[name.replace(/:/g, '')];
+      const lookup = BLOCK_LOOKUP[name];
       if (lookup) return lookup;
       const parts = name.split(':');
       return {
@@ -562,6 +646,7 @@
     let hoveredMesh = null;
     let hoveredOriginalMaterials = null;
     let currentTooltipTarget = null;
+    let tooltipPinned = false;
 
     /* ── Highlight ── */
     function highlightMesh(mesh) {
@@ -589,6 +674,24 @@
     /* ── Tooltip ── */
     function showTooltip(mesh, event) {
       const info = getBlockInfo(mesh.name);
+      const md = tabMdData[activeModel];
+      const sfmCode = info.sfmCode || (info.tabSfmCode && md ? md.sfmCode : null);
+      const codeHtml = sfmCode ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>SFM 代码</span>
+        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+      </div>
+      <pre>${sfmCode}</pre>
+    </div>` : '';
+      const ppText = info.tabPatternProvider && md ? md.patternProvider : null;
+      const ppHtml = ppText ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>样板供应器设置</span>
+      </div>
+      <pre>${ppText}</pre>
+    </div>` : '';
       tooltipInner.innerHTML = `
     <div class="tooltip-head">
       <div class="tooltip-name">${info.name}</div>
@@ -597,6 +700,8 @@
     <div class="tooltip-body">
       ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
       <div class="tooltip-id">${mesh.name}</div>
+      ${codeHtml}
+      ${ppHtml}
     </div>
   `;
       positionTooltip(event);
@@ -614,7 +719,10 @@
       tooltipEl.style.top = Math.max(16, ty) + 'px';
     }
 
-    function hideTooltip() { tooltipEl.classList.remove('visible'); }
+    function hideTooltip() {
+      tooltipPinned = false;
+      tooltipEl.classList.remove('visible', 'pinned');
+    }
 
     /* ── Raycaster ── */
     function getMeshUnderPointer(event) {
@@ -652,13 +760,22 @@
     `;
         el.addEventListener('click', () => focusMesh(item.mesh, item.name));
         el.addEventListener('mouseenter', () => {
-          unhighlightMesh(currentTooltipTarget);
-          hideTooltip();
-          currentTooltipTarget = item.mesh;
-          highlightMesh(item.mesh);
+          if (tooltipPinned) {
+            // Pinned mode: just highlight the hovered mesh, keep tooltip
+            highlightMesh(item.mesh);
+          } else {
+            unhighlightMesh(currentTooltipTarget);
+            hideTooltip();
+            currentTooltipTarget = item.mesh;
+            highlightMesh(item.mesh);
+          }
         });
         el.addEventListener('mouseleave', () => {
-          if (currentTooltipTarget === item.mesh) {
+          if (tooltipPinned) {
+            // Pinned mode: un-hover the sidebar item, restore pinned highlight
+            unhighlightMesh(item.mesh);
+            highlightMesh(currentTooltipTarget);
+          } else if (currentTooltipTarget === item.mesh) {
             unhighlightMesh(currentTooltipTarget);
             hideTooltip();
             currentTooltipTarget = null;
@@ -721,6 +838,24 @@
 
       // Show tooltip
       const info = getBlockInfo(name);
+      const md = tabMdData[activeModel];
+      const sfmCode = info.sfmCode || (info.tabSfmCode && md ? md.sfmCode : null);
+      const codeHtml = sfmCode ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>SFM 代码</span>
+        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+      </div>
+      <pre>${sfmCode}</pre>
+    </div>` : '';
+      const ppText = info.tabPatternProvider && md ? md.patternProvider : null;
+      const ppHtml = ppText ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>样板供应器设置</span>
+      </div>
+      <pre>${ppText}</pre>
+    </div>` : '';
       tooltipInner.innerHTML = `
     <div class="tooltip-head">
       <div class="tooltip-name">${info.name}</div>
@@ -729,11 +864,14 @@
     <div class="tooltip-body">
       ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
       <div class="tooltip-id">${name}</div>
+      ${codeHtml}
+      ${ppHtml}
     </div>
   `;
       tooltipEl.style.left = (sidebarList.getBoundingClientRect().left - 296) + 'px';
       tooltipEl.style.top = '100px';
-      tooltipEl.classList.add('visible');
+      tooltipEl.classList.add('visible', 'pinned');
+      tooltipPinned = true;
 
       highlightMesh(mesh);
       currentTooltipTarget = mesh;
@@ -758,15 +896,15 @@
           }
           // 其他 blockentity 网格仍隐藏（重叠导致 z-fighting）
           if (child.name && child.name.startsWith('blockentity') &&
-              child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber' &&
-              child.name !== 'blockentity:ars_nouveau:enchanting_apparatus' && child.name !== 'blockentityars_nouveauenchanting_apparatus' &&
-              child.name !== 'blockentity:ars_nouveau:arcane_core' && child.name !== 'blockentityars_nouveauarcane_core') {
+            child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber' &&
+            child.name !== 'blockentity:ars_nouveau:enchanting_apparatus' && child.name !== 'blockentityars_nouveauenchanting_apparatus' &&
+            child.name !== 'blockentity:ars_nouveau:arcane_core' && child.name !== 'blockentityars_nouveauarcane_core') {
             child.visible = false;
             return;
           }
           // Alpha Clip: 裁掉纹理中的零 alpha 像素，防止 GLB BLEND 模式导致的穿透
           if (child.name === 'ars_nouveau:creative_source_jar' || child.name === 'ars_nouveaucreative_source_jar' ||
-              child.name === 'blockentity:ars_nouveau:arcane_core' || child.name === 'blockentityars_nouveauarcane_core') {
+            child.name === 'blockentity:ars_nouveau:arcane_core' || child.name === 'blockentityars_nouveauarcane_core') {
             child.material.alphaTest = 0.5;
             child.material.transparent = false;
             child.material.depthWrite = true;
@@ -812,18 +950,22 @@
       if (modelGroups[name]) {
         currentScene = modelGroups[name];
         scene.add(currentScene);
-        currentScene.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
+        currentScene.traverse(c => {
+          if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
             c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
-            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c); });
+            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c);
+        });
       } else {
         try {
           const group = await loadModel(name);
           modelGroups[name] = group;
           currentScene = group;
           scene.add(currentScene);
-          group.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
-            c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
-            c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c); });
+          group.traverse(c => {
+            if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber' ||
+              c.name === 'blockentity:ars_nouveau:enchanting_apparatus' || c.name === 'blockentityars_nouveauenchanting_apparatus' ||
+              c.name === 'blockentity:ars_nouveau:arcane_core' || c.name === 'blockentityars_nouveauarcane_core')) allMeshes.push(c);
+          });
         } catch (err) {
           console.error(err);
           loadingEl.querySelector('p').textContent = '模型加载失败，请刷新重试';
@@ -841,25 +983,41 @@
     }
 
     /* ── Events ── */
+    let tooltipHideTimer = null;
+
     container.addEventListener('pointermove', (event) => {
       if (!currentScene || !allMeshes.length) return;
       const mesh = getMeshUnderPointer(event);
 
       if (mesh !== currentTooltipTarget) {
-        unhighlightMesh(currentTooltipTarget);
-        if (currentTooltipTarget) hideTooltip();
-        currentTooltipTarget = mesh;
         if (mesh) {
+          if (tooltipHideTimer) { clearTimeout(tooltipHideTimer); tooltipHideTimer = null; }
+          unhighlightMesh(currentTooltipTarget);
+          hideTooltip();
+          currentTooltipTarget = mesh;
           highlightMesh(mesh);
           showTooltip(mesh, event);
+        } else if (currentTooltipTarget) {
+          if (!tooltipPinned) {
+            if (!tooltipHideTimer) {
+              tooltipHideTimer = setTimeout(() => {
+                unhighlightMesh(currentTooltipTarget);
+                hideTooltip();
+                currentTooltipTarget = null;
+                tooltipHideTimer = null;
+              }, 200);
+            }
+          }
         }
-        updateSidebarActive(mesh?.name || null);
+        updateSidebarActive(tooltipPinned && currentTooltipTarget ? currentTooltipTarget.name : (mesh?.name || null));
       } else if (mesh) {
         positionTooltip(event);
       }
     });
 
     container.addEventListener('pointerleave', () => {
+      if (tooltipPinned) return;
+      if (tooltipHideTimer) { clearTimeout(tooltipHideTimer); tooltipHideTimer = null; }
       unhighlightMesh(currentTooltipTarget);
       hideTooltip();
       currentTooltipTarget = null;
@@ -901,6 +1059,22 @@
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.model === savedModel);
     });
+    // Pre-load SFM codes and pattern provider settings from markdown files
+    (async () => {
+      for (const [tab, path] of Object.entries(SFM_CODE_FILES)) {
+        try {
+          const r = await fetch(path);
+          const t = await r.text();
+          const sfmM = t.match(/```sfm\n?([\s\S]*?)```/);
+          const ppM = t.match(/## 样板供应器设置\n([\s\S]*?)(?=\n## |$)/);
+          tabMdData[tab] = {
+            sfmCode: sfmM ? sfmM[1].trim() : null,
+            patternProvider: ppM ? ppM[1].trim() : null
+          };
+        } catch { tabMdData[tab] = { sfmCode: null, patternProvider: null }; }
+      }
+    })();
+
     switchModel(savedModel);
   </script>
 </body>
