@@ -700,19 +700,23 @@
         group.traverse(child => {
           if (!child.isMesh) return;
           if (!child.name && child.parent?.name) child.name = child.parent.name;
-          console.log('Mesh found:', child.name, 'parent:', child.parent?.name);
           // imbuement_chamber 外壳 UV 坍缩，移除；改用 blockentity 版本（内部正确模型）
           if (child.name === 'ars_nouveau:imbuement_chamber' || child.name === 'ars_nouveauimbuement_chamber') {
-            console.log('  → HIDING imbuement_chamber shell');
             child.visible = false;
             return;
           }
           // 其他 blockentity 网格仍隐藏（重叠导致 z-fighting）
           if (child.name && child.name.startsWith('blockentity') &&
               child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber') {
-            console.log('  → HIDING other blockentity:', child.name);
             child.visible = false;
             return;
+          }
+          // Alpha Clip: 裁掉纹理中的零 alpha 像素，防止 GLB BLEND 模式导致的穿透
+          if (child.name === 'ars_nouveau:creative_source_jar' || child.name === 'ars_nouveaucreative_source_jar') {
+            child.material.alphaTest = 0.5;
+            child.material.transparent = false;
+            child.material.depthWrite = true;
+            child.material.needsUpdate = true;
           }
         });
 
