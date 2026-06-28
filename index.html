@@ -284,6 +284,7 @@
     #tooltip.visible {
       opacity: 1;
     }
+
     #tooltip.pinned {
       pointer-events: auto;
     }
@@ -551,6 +552,23 @@
     };
     const tabMdData = {};
 
+    // Block label numbers shown when focusing the SFM manager
+    // Edit these arrays to change which blocks get which labels
+    const TAB_LABELS = {
+      '灌注室': [
+        { label: '1', meshes: ['minecraft:barrel'] },
+        { label: '2', meshes: ['ars_nouveau:imbuement_chamber', 'blockentity:ars_nouveau:imbuement_chamber'] },
+        { label: '3', meshes: ['extendedae:ex_pattern_provider'] }
+      ],
+      '附魔装置': [
+        { label: '1', meshes: ['minecraft:barrel'] },
+        { label: '2', meshes: ['ars_nouveau:enchanting_apparatus', 'blockentity:ars_nouveau:enchanting_apparatus'] },
+        { label: '3', meshes: ['ars_nouveau:arcane_platform'] },
+        { label: '4', meshes: ['extendedae:ex_pattern_provider'] }
+      ]
+    };
+    const labelSprites = [];
+
     function getBlockInfo(name) {
       const lookup = BLOCK_LOOKUP[name];
       if (lookup) return lookup;
@@ -593,7 +611,7 @@
     controls.minDistance = 1;
     controls.maxDistance = 30;
     controls.target.set(0, 0, 0);
-    controls.autoRotate = true;
+    controls.autoRotate = localStorage.getItem("sfm_auto_rotate") !== "false";
     controls.autoRotateSpeed = 2.0;
 
     /* ── Lighting ── */
@@ -724,6 +742,95 @@
       tooltipEl.classList.remove('visible', 'pinned');
     }
 
+    /* ── Block Labels ── */
+    function createLabelSprite(text) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      // Rounded rect background
+      const r = 16;
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(128 - r, 0);
+      ctx.quadraticCurveTo(128, 0, 128, r);
+      ctx.lineTo(128, 64 - r);
+      ctx.quadraticCurveTo(128, 64, 128 - r, 64);
+      ctx.lineTo(r, 64);
+      ctx.quadraticCurveTo(0, 64, 0, 64 - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(233,69,96,0.88)';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 28px "Noto Sans SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 64, 33);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(1.0, 0.5, 1);
+      return sprite;
+    }
+
+    const labelOrigMats = [];
+
+    function highlightLabelMeshes() {
+      unhighlightLabelMeshes();
+      const labels = TAB_LABELS[activeModel];
+      if (!labels) return;
+      for (const entry of labels) {
+        let found = null;
+        for (const meshName of entry.meshes) {
+          found = allMeshes.find(m =>
+            m.name === meshName || m.name === meshName.replace(/:/g, '')
+          );
+          if (found) break;
+        }
+        if (!found) continue;
+        // Glow the block (green, distinct from hover blue)
+        const mats = Array.isArray(found.material) ? found.material : [found.material];
+        labelOrigMats.push({
+          mesh: found,
+          materials: mats.map(m => ({
+            emissive: m.emissive ? m.emissive.clone() : null,
+            intensity: m.emissiveIntensity ?? 0
+          }))
+        });
+        mats.forEach(m => {
+          if (m.emissive) { m.emissive.setHex(0x44dd44); m.emissiveIntensity = 0.45; }
+        });
+        // Place label at block top-center (world-space bounding box)
+        const box = new THREE.Box3().setFromObject(found);
+        const ctr = box.getCenter(new THREE.Vector3());
+        const siz = box.getSize(new THREE.Vector3());
+        ctr.y += siz.y / 2 + 0.2;
+        const sprite = createLabelSprite(entry.label);
+        sprite.position.copy(ctr);
+        scene.add(sprite);
+        labelSprites.push(sprite);
+      }
+    }
+
+    function unhighlightLabelMeshes() {
+      for (const entry of labelOrigMats) {
+        const mats = Array.isArray(entry.mesh.material) ? entry.mesh.material : [entry.mesh.material];
+        mats.forEach((m, i) => {
+          const o = entry.materials[i];
+          if (o && m.emissive) { m.emissive.copy(o.emissive || new THREE.Color(0)); m.emissiveIntensity = o.intensity; }
+        });
+      }
+      labelOrigMats.length = 0;
+      for (const s of labelSprites) scene.remove(s);
+      labelSprites.length = 0;
+    }
+
     /* ── Raycaster ── */
     function getMeshUnderPointer(event) {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -836,6 +943,14 @@
       // Highlight in sidebar
       updateSidebarActive(name);
 
+      // Show/hide block labels
+      const isManager = name === 'sfm:manager' || name === 'sfmmanager';
+      if (isManager) {
+        highlightLabelMeshes();
+      } else {
+        unhighlightLabelMeshes();
+      }
+
       // Show tooltip
       const info = getBlockInfo(name);
       const md = tabMdData[activeModel];
@@ -943,6 +1058,7 @@
 
       unhighlightMesh(currentTooltipTarget);
       hideTooltip();
+      unhighlightLabelMeshes();
       currentTooltipTarget = null;
       if (currentScene) scene.remove(currentScene);
       allMeshes = [];
@@ -1029,8 +1145,12 @@
 
     /* ── Auto-rotate Toggle ── */
     const rotateBtn = document.getElementById('rotate-toggle');
+    // Sync visual state with loaded preference
+    rotateBtn.classList.toggle('on', controls.autoRotate);
+    rotateBtn.textContent = controls.autoRotate ? '⟳ 自动旋转' : '⟳ 已暂停';
     rotateBtn.addEventListener('click', () => {
       controls.autoRotate = !controls.autoRotate;
+      localStorage.setItem('sfm_auto_rotate', controls.autoRotate);
       rotateBtn.classList.toggle('on', controls.autoRotate);
       rotateBtn.textContent = controls.autoRotate ? '⟳ 自动旋转' : '⟳ 已暂停';
     });
