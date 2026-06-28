@@ -84,6 +84,29 @@
       border-color: #e94560;
     }
 
+    .rotate-btn {
+      padding: 6px 12px;
+      border: 1px solid #2a2a4a;
+      border-radius: 5px;
+      background: transparent;
+      color: #777;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      margin-left: 4px;
+    }
+
+    .rotate-btn:hover {
+      background: #1a1a35;
+      color: #ccc;
+    }
+
+    .rotate-btn.on {
+      background: #2a4a2a;
+      color: #4fc34f;
+      border-color: #4fc34f;
+    }
+
     .header-link {
       font-size: 11px;
       color: #555;
@@ -338,6 +361,7 @@
       <button class="tab-btn active" data-model="灌注室">灌注室</button>
       <button class="tab-btn" data-model="附魔装置">附魔装置</button>
     </div>
+    <button class="rotate-btn on" id="rotate-toggle">⟳ 自动旋转</button>
   </header>
 
   <div class="main-layout">
@@ -472,6 +496,8 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -483,23 +509,45 @@
     controls.minDistance = 1;
     controls.maxDistance = 30;
     controls.target.set(0, 0, 0);
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 2.0;
 
     /* ── Lighting ── */
     scene.add(new THREE.AmbientLight(0x404060, 0.6));
     scene.add(new THREE.HemisphereLight(0xffffbb, 0x080820, 0.8));
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
     dirLight.position.set(8, 12, 6);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.camera.near = 0.1;
+    dirLight.shadow.camera.far = 30;
+    dirLight.shadow.camera.left = -10;
+    dirLight.shadow.camera.right = 10;
+    dirLight.shadow.camera.top = 10;
+    dirLight.shadow.camera.bottom = -10;
+    dirLight.shadow.bias = -0.001;
     scene.add(dirLight);
 
     const fillLight = new THREE.DirectionalLight(0x8888ff, 0.4);
     fillLight.position.set(-4, 2, -6);
     scene.add(fillLight);
 
-    /* ── Grid ── */
+    /* ── Grid & Ground ── */
     const gridHelper = new THREE.PolarGridHelper(6, 32, 24, 128, '#1a3a5c', '#1a3a5c');
     gridHelper.position.y = -1.1;
     scene.add(gridHelper);
+
+    // Shadow-receiving ground plane
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(14, 14),
+      new THREE.ShadowMaterial({ opacity: 0.25 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -1.1;
+    ground.receiveShadow = true;
+    scene.add(ground);
 
     /* ── GLTF Loader ── */
     const loader = new GLTFLoader();
@@ -631,6 +679,9 @@
 
     function focusMesh(mesh, name) {
       if (!mesh) return;
+      // Clear previous highlight first
+      unhighlightMesh(currentTooltipTarget);
+      hideTooltip();
       // Compute world position of the mesh
       const center = new THREE.Vector3();
       mesh.getWorldPosition(center);
@@ -718,12 +769,18 @@
             child.material.depthWrite = true;
             child.material.needsUpdate = true;
           }
+          // 所有可见网格投射阴影
+          if (child.visible) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
         });
 
         const box = new THREE.Box3().setFromObject(group);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         group.position.sub(center);
+        group.position.y += 0.5; // 抬高半个方块
 
         controls.target.set(0, 0, 0);
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -802,6 +859,14 @@
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => switchModel(btn.dataset.model));
+    });
+
+    /* ── Auto-rotate Toggle ── */
+    const rotateBtn = document.getElementById('rotate-toggle');
+    rotateBtn.addEventListener('click', () => {
+      controls.autoRotate = !controls.autoRotate;
+      rotateBtn.classList.toggle('on', controls.autoRotate);
+      rotateBtn.textContent = controls.autoRotate ? '⟳ 自动旋转' : '⟳ 已暂停';
     });
 
     /* ── Resize ── */
