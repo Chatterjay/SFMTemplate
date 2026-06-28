@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SFM 模板 — 3D 布局查看器</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: #0d0d1f;
+      color: #d0d0d8;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #141428;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid #1e1e3a;
+      flex-shrink: 0;
+      z-index: 10;
+      min-height: 50px;
+    }
+
+    header h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e8e8f0;
+    }
+
+    header h1 span {
+      color: #e94560;
+    }
+
+    header .badge {
+      font-size: 10px;
+      background: #1e1e3a;
+      color: #888;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #2a2a4a;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 3px;
+      margin-left: auto;
+    }
+
+    .tab-btn {
+      padding: 6px 16px;
+      border: 1px solid #2a2a4a;
+      border-radius: 5px;
+      background: transparent;
+      color: #777;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: #1a1a35;
+      color: #ccc;
+    }
+
+    .tab-btn.active {
+      background: #e94560;
+      color: #fff;
+      border-color: #e94560;
+    }
+
+    .header-link {
+      font-size: 11px;
+      color: #555;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .header-link:hover {
+      color: #e94560;
+    }
+
+    /* ── Main Layout ── */
+    .main-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Viewport ── */
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #0b0b1a;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Loading ── */
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0b0b1a;
+      z-index: 20;
+      transition: opacity 0.5s;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #1e1e3a;
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #loading p {
+      margin-top: 12px;
+      color: #555;
+      font-size: 13px;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 220px;
+      background: #111128;
+      border-left: 1px solid #1e1e3a;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #1a1a35;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-header .count {
+      color: #444;
+      font-size: 10px;
+    }
+
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .sidebar-scroll::-webkit-scrollbar-thumb {
+      background: #2a2a4a;
+      border-radius: 2px;
+    }
+
+    .block-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #999;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+      user-select: none;
+    }
+
+    .block-item:hover {
+      background: #1a1a35;
+      color: #ccc;
+    }
+
+    .block-item.active {
+      background: rgba(233, 69, 96, 0.1);
+      border-left-color: #e94560;
+      color: #fff;
+    }
+
+    .block-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .block-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .block-mod {
+      font-size: 10px;
+      color: #555;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    /* ── Tooltip (mcmod-style info card) ── */
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+
+    #tooltip.visible {
+      opacity: 1;
+    }
+
+    .tooltip-inner {
+      background: #141428;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      max-width: 280px;
+      overflow: hidden;
+    }
+
+    .tooltip-head {
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tooltip-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .tooltip-mod {
+      font-size: 11px;
+      color: #e94560;
+      margin-top: 1px;
+    }
+
+    .tooltip-body {
+      padding: 8px 14px 10px;
+    }
+
+    .tooltip-desc {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .tooltip-id {
+      font-size: 10px;
+      color: #444;
+      margin-top: 5px;
+      font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+    }
+
+    /* ── Bottom hint ── */
+    .hint {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #444;
+      font-size: 11px;
+      z-index: 5;
+      background: rgba(11, 11, 26, 0.85);
+      padding: 5px 12px;
+      border-radius: 5px;
+      border: 1px solid #1e1e3a;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1><span>SFM</span> 模板</h1>
+    <span class="badge">3D 布局查看器</span>
+    <a class="header-link" href="https://www.mcmod.cn/class/23362.html" target="_blank" rel="noopener">MC百科</a>
+    <a class="header-link" href="https://github.com/TeamDman/SuperFactoryManager" target="_blank"
+      rel="noopener">GitHub</a>
+    <div class="tabs">
+      <button class="tab-btn active" data-model="灌注室">灌注室</button>
+      <button class="tab-btn" data-model="附魔装置">附魔装置</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div id="canvas-container">
+      <div id="loading">
+        <div class="spinner"></div>
+        <p>加载模型中...</p>
+      </div>
+      <div class="hint">拖拽旋转 · 滚轮缩放 · 悬停查看方块信息</div>
+    </div>
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <span>方块列表</span>
+        <span class="count" id="block-count">0</span>
+      </div>
+      <div class="sidebar-scroll" id="block-list"></div>
+    </div>
+  </div>
+
+  <div id="tooltip">
+    <div class="tooltip-inner"></div>
+  </div>
+
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    /* ── Block Info Mapping ── */
+    const MOD_COLORS = {
+      "Ars Nouveau": "#e87d3e",
+      "Extended AE": "#4fc3f7",
+      "Minecraft": "#7c7c7c",
+      "Super Factory Manager": "#e94560",
+    };
+
+    const BLOCK_INFO = {
+      "ars_nouveau:creative_source_jar": {
+        name: "创造之源罐", mod: "Ars Nouveau",
+        desc: "提供无限源能，为灌注 / 附魔装置供能"
+      },
+      "ars_nouveau:imbuement_chamber": {
+        name: "灌注室", mod: "Ars Nouveau",
+        desc: "灌注物品的核心机器，配合 SFM 自动化处理"
+      },
+      "blockentity:ars_nouveau:imbuement_chamber": {
+        name: "灌注室 (动态)", mod: "Ars Nouveau",
+        desc: "灌注室内部动态渲染层（旋转动画等）"
+      },
+      "extendedae:ex_pattern_provider": {
+        name: "扩展样板供应器", mod: "Extended AE",
+        desc: "AE2 自动合成样板供应，阻挡模式控制物品输出"
+      },
+      "minecraft:barrel": {
+        name: "木桶", mod: "Minecraft",
+        desc: "物品暂存容器，SFM 管理的输入 / 输出缓冲"
+      },
+      "minecraft:white_concrete": {
+        name: "白色混凝土", mod: "Minecraft",
+        desc: "装饰 / 标记方块，用于区域标识"
+      },
+      "sfm:cable": {
+        name: "SFM 线缆", mod: "Super Factory Manager",
+        desc: "连接 SFM 管理器与各容器，传输物品信号"
+      },
+      "sfm:manager": {
+        name: "SFM 管理器", mod: "Super Factory Manager",
+        desc: "运行 SFM 自动化程序，控制物品流向"
+      },
+      "ars_nouveau:arcane_core_emissive": {
+        name: "奥术核心", mod: "Ars Nouveau",
+        desc: "附魔装置的核心组件，发光层"
+      },
+      "ars_nouveau:arcane_platform": {
+        name: "奥术平台", mod: "Ars Nouveau",
+        desc: "放置被附魔物品的平台基座"
+      },
+      "ars_nouveau:enchanting_apparatus": {
+        name: "附魔装置", mod: "Ars Nouveau",
+        desc: "附魔物品的主机器，需要周围 pedestal 配合"
+      },
+      "blockentity:ars_nouveau:arcane_core": {
+        name: "奥术核心 (实体)", mod: "Ars Nouveau",
+        desc: "奥术核心的方块实体渲染层"
+      },
+      "blockentity:ars_nouveau:enchanting_apparatus": {
+        name: "附魔装置 (实体)", mod: "Ars Nouveau",
+        desc: "附魔装置额外渲染层（旋转粒子等）"
+      },
+      "blockentity:ars_nouveau:enchanting_apparatus_2": {
+        name: "附魔装置 (实体)", mod: "Ars Nouveau",
+        desc: "附魔装置动态模型渲染"
+      }
+    };
+
+    function getBlockInfo(name) {
+      // Also try without colons (GLB from Blender strips them)
+      const lookup = BLOCK_INFO[name] || BLOCK_INFO[name.replace(/:/g, '')];
+      if (lookup) return lookup;
+      const parts = name.split(':');
+      return {
+        name: parts.length > 1 ? parts.pop().replace(/_/g, ' ') : name.replace(/_/g, ' '),
+        mod: parts.length > 1 ? parts.join(':') : '',
+        desc: ''
+      };
+    }
+
+    function getModColor(mod) {
+      return MOD_COLORS[mod] || '#888';
+    }
+
+    /* ── DOM refs ── */
+    const container = document.getElementById('canvas-container');
+    const loadingEl = document.getElementById('loading');
+    const tooltipEl = document.getElementById('tooltip');
+    const tooltipInner = tooltipEl.querySelector('.tooltip-inner');
+    const sidebarList = document.getElementById('block-list');
+    const blockCountEl = document.getElementById('block-count');
+
+    /* ── Scene Setup ── */
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 1;
+    controls.maxDistance = 30;
+    controls.target.set(0, 0, 0);
+
+    /* ── Lighting ── */
+    scene.add(new THREE.AmbientLight(0x404060, 0.6));
+    scene.add(new THREE.HemisphereLight(0xffffbb, 0x080820, 0.8));
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight.position.set(8, 12, 6);
+    scene.add(dirLight);
+
+    const fillLight = new THREE.DirectionalLight(0x8888ff, 0.4);
+    fillLight.position.set(-4, 2, -6);
+    scene.add(fillLight);
+
+    /* ── Grid ── */
+    const gridHelper = new THREE.PolarGridHelper(6, 32, 24, 128, '#1a3a5c', '#1a3a5c');
+    gridHelper.position.y = -1.1;
+    scene.add(gridHelper);
+
+    /* ── GLTF Loader ── */
+    const loader = new GLTFLoader();
+    const modelGroups = {};
+    let activeModel = '灌注室';
+    let currentScene = null;
+    let allMeshes = [];
+
+    /* ── Hover State ── */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let hoveredMesh = null;
+    let hoveredOriginalMaterials = null;
+    let currentTooltipTarget = null;
+
+    /* ── Highlight ── */
+    function highlightMesh(mesh) {
+      if (!mesh || !mesh.isMesh) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      hoveredOriginalMaterials = materials.map(m => ({
+        emissive: m.emissive ? m.emissive.clone() : null,
+        intensity: m.emissiveIntensity ?? 0,
+      }));
+      materials.forEach(m => {
+        if (m.emissive) { m.emissive.setHex(0x4488ff); m.emissiveIntensity = 0.35; }
+      });
+    }
+
+    function unhighlightMesh(mesh) {
+      if (!mesh || !mesh.isMesh || !hoveredOriginalMaterials) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      materials.forEach((m, i) => {
+        const o = hoveredOriginalMaterials[i];
+        if (o && m.emissive) { m.emissive.copy(o.emissive || new THREE.Color(0)); m.emissiveIntensity = o.intensity; }
+      });
+      hoveredOriginalMaterials = null;
+    }
+
+    /* ── Tooltip ── */
+    function showTooltip(mesh, event) {
+      const info = getBlockInfo(mesh.name);
+      tooltipInner.innerHTML = `
+    <div class="tooltip-head">
+      <div class="tooltip-name">${info.name}</div>
+      <div class="tooltip-mod" style="color:${getModColor(info.mod)}">${info.mod}</div>
+    </div>
+    <div class="tooltip-body">
+      ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
+      <div class="tooltip-id">${mesh.name}</div>
+    </div>
+  `;
+      positionTooltip(event);
+      tooltipEl.classList.add('visible');
+    }
+
+    function positionTooltip(event) {
+      const tw = Math.min(280, window.innerWidth - 32);
+      const th = tooltipEl.offsetHeight || 100;
+      let tx = event.clientX + 16;
+      let ty = event.clientY + 16;
+      if (tx + tw > window.innerWidth - 16) tx = event.clientX - tw - 16;
+      if (ty + th > window.innerHeight - 16) ty = window.innerHeight - th - 16;
+      tooltipEl.style.left = Math.max(16, tx) + 'px';
+      tooltipEl.style.top = Math.max(16, ty) + 'px';
+    }
+
+    function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+    /* ── Raycaster ── */
+    function getMeshUnderPointer(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      if (!allMeshes.length) return null;
+      const hits = raycaster.intersectObjects(allMeshes);
+      return hits.length > 0 ? hits[0].object : null;
+    }
+
+    /* ── Sidebar ── */
+    function buildSidebar(meshes) {
+      sidebarList.innerHTML = '';
+      const seen = new Set();
+      const items = [];
+
+      meshes.forEach(m => {
+        if (!m.name || seen.has(m.name)) return;
+        seen.add(m.name);
+        const info = getBlockInfo(m.name);
+        const color = getModColor(info.mod);
+        items.push({ name: m.name, info, color, mesh: m });
+      });
+
+      items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'block-item';
+        el.dataset.name = item.name;
+        el.innerHTML = `
+      <span class="block-dot" style="background:${item.color}"></span>
+      <span class="block-name">${item.info.name}</span>
+      <span class="block-mod" style="color:${item.color}">${item.info.mod}</span>
+    `;
+        el.addEventListener('click', () => focusMesh(item.mesh, item.name));
+        el.addEventListener('mouseenter', () => {
+          unhighlightMesh(currentTooltipTarget);
+          hideTooltip();
+          currentTooltipTarget = item.mesh;
+          highlightMesh(item.mesh);
+        });
+        el.addEventListener('mouseleave', () => {
+          if (currentTooltipTarget === item.mesh) {
+            unhighlightMesh(currentTooltipTarget);
+            hideTooltip();
+            currentTooltipTarget = null;
+          }
+        });
+        sidebarList.appendChild(el);
+      });
+
+      blockCountEl.textContent = items.length;
+      updateSidebarActive(null);
+    }
+
+    function updateSidebarActive(name) {
+      sidebarList.querySelectorAll('.block-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.name === name);
+      });
+    }
+
+    function focusMesh(mesh, name) {
+      if (!mesh) return;
+      // Compute world position of the mesh
+      const center = new THREE.Vector3();
+      mesh.getWorldPosition(center);
+
+      // Use bounding box center if available
+      if (mesh.geometry?.boundingBox) {
+        const local = mesh.geometry.boundingBox.getCenter(new THREE.Vector3());
+        center.add(local);
+      }
+
+      // Animate controls target to the mesh position
+      const startTarget = controls.target.clone();
+      const startPos = camera.position.clone();
+      const dir = startPos.clone().sub(startTarget).normalize();
+      const dist = startPos.distanceTo(startTarget);
+
+      const endTarget = center;
+      const endPos = center.clone().add(dir.multiplyScalar(dist));
+
+      const duration = 400;
+      const startTime = performance.now();
+
+      function animateCamera(time) {
+        const t = Math.min((time - startTime) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+
+        controls.target.lerpVectors(startTarget, endTarget, ease);
+        camera.position.lerpVectors(startPos, endPos, ease);
+        controls.update();
+
+        if (t < 1) requestAnimationFrame(animateCamera);
+      }
+      requestAnimationFrame(animateCamera);
+
+      // Highlight in sidebar
+      updateSidebarActive(name);
+
+      // Show tooltip
+      const info = getBlockInfo(name);
+      tooltipInner.innerHTML = `
+    <div class="tooltip-head">
+      <div class="tooltip-name">${info.name}</div>
+      <div class="tooltip-mod" style="color:${getModColor(info.mod)}">${info.mod}</div>
+    </div>
+    <div class="tooltip-body">
+      ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
+      <div class="tooltip-id">${name}</div>
+    </div>
+  `;
+      tooltipEl.style.left = (sidebarList.getBoundingClientRect().left - 296) + 'px';
+      tooltipEl.style.top = '100px';
+      tooltipEl.classList.add('visible');
+
+      highlightMesh(mesh);
+      currentTooltipTarget = mesh;
+    }
+
+    /* ── Load Model ── */
+    async function loadModel(name) {
+      loadingEl.classList.remove('hidden');
+      try {
+        // Prefer .glb (Blender export), fall back to .gltf (VoxelBridge export)
+        const ext = await fetch(`models/${name}/scene.glb`, { method: 'HEAD' }).then(r => r.ok ? 'glb' : 'gltf');
+        const gltf = await loader.loadAsync(`models/${name}/scene.${ext}`);
+        const group = gltf.scene;
+
+        group.traverse(child => {
+          if (!child.isMesh) return;
+          if (!child.name && child.parent?.name) child.name = child.parent.name;
+          console.log('Mesh found:', child.name, 'parent:', child.parent?.name);
+          // imbuement_chamber 外壳 UV 坍缩，移除；改用 blockentity 版本（内部正确模型）
+          if (child.name === 'ars_nouveau:imbuement_chamber' || child.name === 'ars_nouveauimbuement_chamber') {
+            console.log('  → HIDING imbuement_chamber shell');
+            child.visible = false;
+            return;
+          }
+          // 其他 blockentity 网格仍隐藏（重叠导致 z-fighting）
+          if (child.name && child.name.startsWith('blockentity') &&
+              child.name !== 'blockentity:ars_nouveau:imbuement_chamber' && child.name !== 'blockentityars_nouveauimbuement_chamber') {
+            console.log('  → HIDING other blockentity:', child.name);
+            child.visible = false;
+            return;
+          }
+        });
+
+        const box = new THREE.Box3().setFromObject(group);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        group.position.sub(center);
+
+        controls.target.set(0, 0, 0);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const dist = maxDim * 1.6;
+        camera.position.set(dist * 0.7, dist * 0.5, dist * 0.8);
+        controls.update();
+
+        group.rotation.y = -Math.PI / 6;
+
+        return group;
+      } finally {
+        loadingEl.classList.add('hidden');
+      }
+    }
+
+    /* ── Switch Model ── */
+    async function switchModel(name) {
+      if (activeModel === name && currentScene) return;
+
+      unhighlightMesh(currentTooltipTarget);
+      hideTooltip();
+      currentTooltipTarget = null;
+      if (currentScene) scene.remove(currentScene);
+      allMeshes = [];
+
+      if (modelGroups[name]) {
+        currentScene = modelGroups[name];
+        scene.add(currentScene);
+        currentScene.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber')) allMeshes.push(c); });
+      } else {
+        try {
+          const group = await loadModel(name);
+          modelGroups[name] = group;
+          currentScene = group;
+          scene.add(currentScene);
+          group.traverse(c => { if (c.isMesh && (c.visible || c.name === 'blockentity:ars_nouveau:imbuement_chamber' || c.name === 'blockentityars_nouveauimbuement_chamber')) allMeshes.push(c); });
+        } catch (err) {
+          console.error(err);
+          loadingEl.querySelector('p').textContent = '模型加载失败，请刷新重试';
+          return;
+        }
+      }
+
+      activeModel = name;
+      buildSidebar(allMeshes);
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.model === name);
+      });
+    }
+
+    /* ── Events ── */
+    container.addEventListener('pointermove', (event) => {
+      if (!currentScene || !allMeshes.length) return;
+      const mesh = getMeshUnderPointer(event);
+
+      if (mesh !== currentTooltipTarget) {
+        unhighlightMesh(currentTooltipTarget);
+        if (currentTooltipTarget) hideTooltip();
+        currentTooltipTarget = mesh;
+        if (mesh) {
+          highlightMesh(mesh);
+          showTooltip(mesh, event);
+        }
+        updateSidebarActive(mesh?.name || null);
+      } else if (mesh) {
+        positionTooltip(event);
+      }
+    });
+
+    container.addEventListener('pointerleave', () => {
+      unhighlightMesh(currentTooltipTarget);
+      hideTooltip();
+      currentTooltipTarget = null;
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchModel(btn.dataset.model));
+    });
+
+    /* ── Resize ── */
+    function resize() {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', resize);
+
+    /* ── Animation Loop ── */
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    /* ── Start ── */
+    switchModel('灌注室');
+  </script>
+</body>
+
+</html>
