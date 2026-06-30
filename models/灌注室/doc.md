@@ -1,8 +1,5 @@
 # 灌注室代码
 
-## 机器布局
-![灌注室整体布局](images/灌注室_布局.png)
-
 ## SFM 代码
 ```sfm
 every 60 ticks do

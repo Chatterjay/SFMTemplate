@@ -9,6 +9,21 @@ let _models = [];
 let _blockInfo = {};
 let _blockLookup = {};
 
+function parseDocSections(md) {
+  const result = {};
+  const parts = md.split(/\n(?=## )/);
+  for (const part of parts) {
+    const m = part.match(/^## (.+)\n([\s\S]*)$/);
+    if (!m) continue;
+    let body = m[2].trim();
+    // Extract content from fenced code block if present
+    const code = body.match(/```(?:\w+)?\n([\s\S]*?)```/);
+    if (code) body = code[1].trim();
+    result[m[1].trim()] = body;
+  }
+  return result;
+}
+
 export async function loadConfig() {
   const resp = await fetch('models/registry.json');
   const ids = await resp.json();
@@ -21,6 +36,20 @@ export async function loadConfig() {
     const model = await mResp.json();
     _models.push(model);
     if (model.blocks) Object.assign(_blockInfo, model.blocks);
+
+    // Fill sections from doc.md where fromDoc is set
+    if (model.sections) {
+      try {
+        const dResp = await fetch(`models/${id}/doc.md`);
+        if (dResp.ok) {
+          const md = await dResp.text();
+          const docs = parseDocSections(md);
+          for (const s of model.sections) {
+            if (s.fromDoc) s.content = docs[s.title] || s.content;
+          }
+        }
+      } catch (_) { /* doc.md is optional */ }
+    }
   }
 
   _blockLookup = {};

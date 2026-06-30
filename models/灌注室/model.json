@@ -1,8 +1,10 @@
 {
   "id": "灌注室",
   "name": "灌注室",
-  "sfmCode": "every 60 ticks do\n\tinput from \"1\"\n\toutput to  each  \"2\"\n\tforget\n\tinput from \"2\"\n\toutput except \"minecraft:lapis_lazuli\" to \"3\"\nend",
-  "patternProvider": null,
+  "sections": [
+    { "id": "sfm", "title": "SFM 代码", "fromDoc": true, "copyable": true },
+    { "id": "pattern", "title": "样板供应器设置", "fromDoc": true }
+  ],
   "labels": [
     { "label": "1", "meshes": ["minecraft:barrel"] },
     { "label": "2", "meshes": ["ars_nouveau:imbuement_chamber", "blockentity:ars_nouveau:imbuement_chamber"] },
@@ -24,7 +26,7 @@
     "extendedae:ex_pattern_provider": {
       "name": "扩展样板供应器", "mod": "Extended AE",
       "desc": "AE2 自动合成样板供应，阻挡模式控制物品输出",
-      "tabPatternProvider": true
+      "showSections": ["pattern"]
     },
     "minecraft:barrel": {
       "name": "木桶", "mod": "Minecraft",
@@ -41,7 +43,7 @@
     "sfm:manager": {
       "name": "SFM 管理器", "mod": "Super Factory Manager",
       "desc": "运行 SFM 自动化程序，控制物品流向",
-      "tabSfmCode": true
+      "showSections": ["sfm"]
     }
   }
 }

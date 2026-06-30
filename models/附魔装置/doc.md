@@ -1,8 +1,5 @@
 # 附魔装置
 
-## 机器布局
-![附魔装置整体布局](images/附魔装置_布局.png)
-
 ## SFM 代码
 ```sfm
 every 20 ticks do
