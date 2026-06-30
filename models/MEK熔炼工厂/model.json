@@ -1,8 +1,24 @@
 {
   "id": "MEK熔炼工厂",
   "name": "MEK熔炼工厂",
-  "sfmCode": "every ticks do\n\tinput fe:: from \"1\" top side\n\toutput fe:: to \"2\" top side\nend\nevery 20 ticks do\n\tinput from \"3\"\n\toutput retain 256 to each \"2\" top side\n\tforget\n\tinput from \"2\" top side\n\toutput to \"4\" top side\nend",
-  "patternProvider": "- 阻挡模式：off\n- 锁定合成：off",
+  "sections": [
+    {
+      "id": "sfm",
+      "title": "SFM 代码",
+      "content": "every ticks do\n\tinput fe:: from \"1\" top side\n\toutput fe:: to \"2\" top side\nend\nevery 20 ticks do\n\tinput from \"3\"\n\toutput retain 256 to each \"2\" top side\n\tforget\n\tinput from \"2\" top side\n\toutput to \"4\" top side\nend",
+      "copyable": true
+    },
+    {
+      "id": "pattern",
+      "title": "样板供应器设置",
+      "content": "- 阻挡模式：off\n- 锁定合成：off"
+    },
+    {
+      "id": "factory",
+      "title": "终极熔炼工厂",
+      "content": "- 上:输入/输出\n- 其余:空\n- 自动弹出:off"
+    }
+  ],
   "labels": [
     { "label": "1", "meshes": ["mekanism:ultimate_energy_cube"] },
     { "label": "2", "meshes": ["mekanism:ultimate_smelting_factory"] },
@@ -16,7 +32,8 @@
     },
     "mekanism:ultimate_smelting_factory": {
       "name": "终极熔炼工厂", "mod": "Mekanism",
-      "desc": "Mekanism 顶级熔炼设备，可同时处理大量物品"
+      "desc": "Mekanism 顶级熔炼设备，可同时处理大量物品",
+      "showSections": ["factory"]
     },
     "fluxnetworks:flux_point": {
       "name": "Flux 网络节点", "mod": "Flux Networks",
@@ -25,7 +42,7 @@
     "extendedae:ex_pattern_provider": {
       "name": "扩展样板供应器", "mod": "Extended AE",
       "desc": "AE2 自动合成样板供应，输出成品至网络",
-      "tabPatternProvider": true
+      "showSections": ["pattern"]
     },
     "minecraft:barrel": {
       "name": "木桶", "mod": "Minecraft",
@@ -42,7 +59,7 @@
     "sfm:manager": {
       "name": "SFM 管理器", "mod": "Super Factory Manager",
       "desc": "运行 SFM 自动化程序，控制物品流向",
-      "tabSfmCode": true
+      "showSections": ["sfm"]
     }
   }
 }
