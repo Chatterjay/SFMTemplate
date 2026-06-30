@@ -52,7 +52,14 @@ header .badge {
   display: flex;
   gap: 3px;
   margin-left: auto;
+  overflow-x: auto;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
 }
+.tabs::-webkit-scrollbar { height: 2px; }
+.tabs::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 1px; }
 
 .tab-btn {
   padding: 6px 16px;

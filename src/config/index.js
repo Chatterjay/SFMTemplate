@@ -66,7 +66,6 @@ export const BLOCK_INFO = {
   }
 };
 
-// Build name lookup with and without colons (GLB from Blender strips them)
 const BLOCK_LOOKUP = {};
 for (const [key, val] of Object.entries(BLOCK_INFO)) {
   BLOCK_LOOKUP[key] = val;
@@ -88,58 +87,103 @@ export function getModColor(mod) {
   return MOD_COLORS[mod] || '#888';
 }
 
-// Tab-specific SFM code file paths
-export const SFM_CODE_FILES = {
-  '灌注室': '1.21.1/灌注室代码.md',
-  '附魔装置': '1.21.1/附魔装置.md'
-};
+export const MODELS = [
+  {
+    id: '灌注室',
+    name: '灌注室',
+    sfmCode: `every 60 ticks do
+\tinput from "1"
+\toutput to  each  "2"
+\tforget
+\tinput from "2"
+\toutput except "minecraft:lapis_lazuli" to "3"
+end`,
+    patternProvider: null,
+    labels: [
+      { label: '1', meshes: ['minecraft:barrel'] },
+      { label: '2', meshes: ['ars_nouveau:imbuement_chamber', 'blockentity:ars_nouveau:imbuement_chamber'] },
+      { label: '3', meshes: ['extendedae:ex_pattern_provider'] }
+    ],
+  },
+  {
+    id: '附魔装置',
+    name: '附魔装置',
+    sfmCode: `every 20 ticks do
+\tinput from "1" slot 1-10
+\toutput to "3"
+\tforget
+\tinput from "1"
+\toutput to "2" slot 0
+\tforget
+\tinput  from "2"
+\toutput to "4"
+end`,
+    patternProvider: `- 阻挡模式：off
+- 锁定合成：on`,
+    labels: [
+      { label: '1', meshes: ['minecraft:barrel'] },
+      { label: '2', meshes: ['ars_nouveau:enchanting_apparatus', 'blockentity:ars_nouveau:enchanting_apparatus'] },
+      { label: '3', meshes: ['ars_nouveau:arcane_platform'] },
+      { label: '4', meshes: ['extendedae:ex_pattern_provider'] }
+    ],
+  },
+];
+export const DEFAULT_MODEL = MODELS[0].id;
 
-// Model processing rules
-// Blockentity meshes that should stay visible (others are hidden to avoid z-fighting)
-export function buildVisibleBlockentitySet() {
-  const names = [
-    'blockentity:ars_nouveau:imbuement_chamber',
-    'blockentity:ars_nouveau:enchanting_apparatus',
-    'blockentity:ars_nouveau:arcane_core'
-  ];
+export function getModel(id) {
+  return MODELS.find(m => m.id === id);
+}
+
+export function buildTooltipHtml(info, meshName, activeModel) {
+  const model = getModel(activeModel);
+  const sfmCode = info.tabSfmCode ? model?.sfmCode : null;
+  const codeHtml = sfmCode ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>SFM 代码</span>
+        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+      </div>
+      <pre>${sfmCode}</pre>
+    </div>` : '';
+  const ppText = info.tabPatternProvider ? model?.patternProvider : null;
+  const ppHtml = ppText ? `
+    <div class="tooltip-code">
+      <div class="tooltip-code-header">
+        <span>样板供应器设置</span>
+      </div>
+      <pre>${ppText}</pre>
+    </div>` : '';
+  return `
+    <div class="tooltip-head">
+      <div class="tooltip-name">${info.name}</div>
+      <div class="tooltip-mod" style="color:${getModColor(info.mod)}">${info.mod}</div>
+    </div>
+    <div class="tooltip-body">
+      ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
+      <div class="tooltip-id">${meshName}</div>
+      ${codeHtml}
+      ${ppHtml}
+    </div>
+  `;
+}
+function makeSet(names) {
   const set = new Set(names);
   names.forEach(n => set.add(n.replace(/:/g, '')));
   return set;
 }
 
-// Mesh names that need alpha clip (裁掉零 alpha 像素)
-export function buildAlphaClipSet() {
-  const names = [
-    'ars_nouveau:creative_source_jar',
-    'blockentity:ars_nouveau:arcane_core'
-  ];
-  const set = new Set(names);
-  names.forEach(n => set.add(n.replace(/:/g, '')));
-  return set;
-}
+export const VISIBLE_BLOCKENTITIES = makeSet([
+  'blockentity:ars_nouveau:imbuement_chamber',
+  'blockentity:ars_nouveau:enchanting_apparatus',
+  'blockentity:ars_nouveau:arcane_core'
+]);
 
-// Mesh names to hide entirely (outer shells with UV collapse)
-export function buildHiddenMeshSet() {
-  const names = [
-    'ars_nouveau:imbuement_chamber'
-  ];
-  const set = new Set(names);
-  names.forEach(n => set.add(n.replace(/:/g, '')));
-  return set;
-}
+export const ALPHA_CLIP_MESHES = makeSet([
+  'ars_nouveau:creative_source_jar',
+  'blockentity:ars_nouveau:arcane_core'
+]);
 
-// Block label numbers shown when focusing the SFM manager
-// Edit these arrays to change which blocks get which labels
-export const TAB_LABELS = {
-  '灌注室': [
-    { label: '1', meshes: ['minecraft:barrel'] },
-    { label: '2', meshes: ['ars_nouveau:imbuement_chamber', 'blockentity:ars_nouveau:imbuement_chamber'] },
-    { label: '3', meshes: ['extendedae:ex_pattern_provider'] }
-  ],
-  '附魔装置': [
-    { label: '1', meshes: ['minecraft:barrel'] },
-    { label: '2', meshes: ['ars_nouveau:enchanting_apparatus', 'blockentity:ars_nouveau:enchanting_apparatus'] },
-    { label: '3', meshes: ['ars_nouveau:arcane_platform'] },
-    { label: '4', meshes: ['extendedae:ex_pattern_provider'] }
-  ]
-};
+export const HIDDEN_MESHES = makeSet([
+  'ars_nouveau:imbuement_chamber'
+]);
+
