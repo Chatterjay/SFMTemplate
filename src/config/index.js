@@ -1,8 +1,8 @@
 export const MOD_COLORS = {
-  "Ars Nouveau": "#e87d3e",
-  "Extended AE": "#4fc3f7",
-  "Minecraft": "#7c7c7c",
-  "Super Factory Manager": "#e94560",
+  'Ars Nouveau': '#e87d3e',
+  'Extended AE': '#4fc3f7',
+  'Minecraft': '#7c7c7c',
+  'Super Factory Manager': '#e94560',
 };
 
 let _models = [];
@@ -82,10 +82,8 @@ export function getModColor(mod) {
 export function buildTooltipHtml(info, meshName, activeModel) {
   const model = getModel(activeModel);
 
-  // Collect section IDs to show for this block (new-style + backward compat)
   const showIds = [...(info.showSections || [])];
 
-  // Build sections from model data
   const sectionsHtml = showIds.map(id => {
     const s = model?.sections?.find(s => s.id === id);
     if (!s) return '';

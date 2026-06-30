@@ -23,7 +23,7 @@ export function createScene(container) {
   controls.minDistance = 1;
   controls.maxDistance = 30;
   controls.target.set(0, 0, 0);
-  controls.autoRotate = localStorage.getItem("sfm_auto_rotate") !== "false";
+  controls.autoRotate = localStorage.getItem('sfm_auto_rotate') !== 'false';
   controls.autoRotateSpeed = 2.0;
 
   scene.add(new THREE.AmbientLight(0x404060, 0.6));

@@ -31,7 +31,6 @@ export function createUI(scene) {
     tooltipEl.style.top = Math.max(16, ty) + 'px';
   }
 
-  /* ── Sidebar ── */
   function buildSidebar(sidebarList, blockCountEl, allMeshes, handlers) {
     sidebarList.innerHTML = '';
     const seen = new Set();
@@ -70,7 +69,6 @@ export function createUI(scene) {
     });
   }
 
-  /* ── Block Labels ── */
   function createLabelSprite(text) {
     const canvas = document.createElement('canvas');
     canvas.width = 128;

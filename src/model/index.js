@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import {
-  VISIBLE_BLOCKENTITIES,
-  HIDDEN_MESHES
-} from '../config/index.js';
+import { VISIBLE_BLOCKENTITIES, HIDDEN_MESHES } from '../config/index.js';
 
 export function createModelManager(scene, controls, camera) {
   const loader = new GLTFLoader();
@@ -16,7 +13,6 @@ export function createModelManager(scene, controls, camera) {
     allMeshes = [];
     group.traverse(c => {
       if (c.isMesh && (c.visible || VISIBLE_BLOCKENTITIES.has(c.name))) {
-        // Reset emissive so cached models don't carry stale highlights
         const mats = Array.isArray(c.material) ? c.material : [c.material];
         mats.forEach(m => { if (m.emissive) { m.emissive.setHex(0); m.emissiveIntensity = 0; } });
         allMeshes.push(c);
@@ -42,8 +38,7 @@ export function createModelManager(scene, controls, camera) {
         child.visible = false;
         return;
       }
-      // Auto-fix alpha BLEND materials (transparent without alphaTest):
-      // force alpha test + depth write to prevent see-through issues
+      // Auto-fix alpha BLEND materials: force alpha test + depth write
       if (child.material.transparent && !child.material.alphaTest) {
         child.material.alphaTest = 0.5;
         child.material.transparent = false;

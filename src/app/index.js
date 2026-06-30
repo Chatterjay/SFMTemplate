@@ -6,7 +6,6 @@ import { createUI } from '../ui/index.js';
 import { loadConfig, getModels, getDefaultModel, getBlockInfo, getBlockInfoMap, buildTooltipHtml } from '../config/index.js';
 import { buildIndex, mountSearch, clearSearch } from '../search/index.js';
 
-/* ── DOM refs ── */
 const container = document.getElementById('canvas-container');
 const loadingEl = document.getElementById('loading');
 const tooltipEl = document.getElementById('tooltip');
@@ -15,18 +14,15 @@ const sidebarList = document.getElementById('block-list');
 const blockCountEl = document.getElementById('block-count');
 const rotateBtn = document.getElementById('rotate-toggle');
 
-/* ── Init modules ── */
 const { renderer, scene, camera, controls } = createScene(container);
 const modelMgr = createModelManager(scene, controls, camera);
 const interaction = createInteraction(renderer, camera);
 const ui = createUI(scene);
 
-/* ── Shared state ── */
 let currentTooltipTarget = null;
 let tooltipHideTimer = null;
 let allMeshes = [];
 
-/* ── Camera animation ── */
 function animateCameraTo(targetPos) {
   const startTarget = controls.target.clone();
   const startPos = camera.position.clone();
@@ -48,7 +44,6 @@ function animateCameraTo(targetPos) {
   requestAnimationFrame(tick);
 }
 
-/* ── Sidebar handlers ── */
 const sidebarHandlers = {
   onFocus: (mesh, name) => {
     if (!mesh) return;
@@ -109,7 +104,6 @@ const sidebarHandlers = {
   },
 };
 
-/* ── Switch model ── */
 async function switchModel(name) {
   if (modelMgr.getActiveModel() === name && modelMgr.getCurrentScene()) return;
 
@@ -134,7 +128,6 @@ async function switchModel(name) {
   rebuildTabs(name);
 }
 
-/* ── Pointer events ── */
 container.addEventListener('pointermove', (event) => {
   const curScene = modelMgr.getCurrentScene();
   if (!curScene || !allMeshes.length) return;
@@ -180,7 +173,6 @@ container.addEventListener('pointerleave', () => {
   currentTooltipTarget = null;
 });
 
-/* ── Tab buttons (dynamic from MODELS) ── */
 const tabContainer = document.querySelector('.tabs');
 function rebuildTabs(activeName) {
   tabContainer.innerHTML = '';
@@ -195,7 +187,6 @@ function rebuildTabs(activeName) {
   }
 }
 
-/* ── Search ── */
 mountSearch(document.querySelector('header'), {
   onSelect: (modelId, type, label, meshName) => {
     /* Always clear current state before acting */
@@ -226,7 +217,6 @@ mountSearch(document.querySelector('header'), {
   },
 });
 
-/* ── Auto-rotate toggle ── */
 rotateBtn.classList.toggle('on', controls.autoRotate);
 rotateBtn.textContent = controls.autoRotate ? '⟳ 自动旋转' : '⟳ 已暂停';
 rotateBtn.addEventListener('click', () => {
@@ -236,7 +226,6 @@ rotateBtn.addEventListener('click', () => {
   rotateBtn.textContent = controls.autoRotate ? '⟳ 自动旋转' : '⟳ 已暂停';
 });
 
-/* ── Resize ── */
 function resize() {
   const w = container.clientWidth;
   const h = container.clientHeight;
@@ -246,7 +235,6 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 
-/* ── Animation loop ── */
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -254,7 +242,6 @@ function animate() {
 }
 animate();
 
-/* ── Start ── */
 await loadConfig();
 buildIndex(getModels(), getBlockInfoMap());
 const savedModel = localStorage.getItem('sfm_active_model') || getDefaultModel();

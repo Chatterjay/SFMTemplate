@@ -112,7 +112,6 @@ export function buildIndex(models, blockInfo) {
   _searchItems = items;
 }
 
-/* ── DOM ── */
 const CLS = 'sf-search';
 
 const html = `
