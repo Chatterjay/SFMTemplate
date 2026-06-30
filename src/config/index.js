@@ -84,19 +84,10 @@ export function buildTooltipHtml(info, meshName, activeModel) {
 
   // Collect section IDs to show for this block (new-style + backward compat)
   const showIds = [...(info.showSections || [])];
-  if (info.tabSfmCode && !showIds.includes('sfm')) showIds.push('sfm');
-  if (info.tabPatternProvider && !showIds.includes('pattern')) showIds.push('pattern');
 
   // Build sections from model data
   const sectionsHtml = showIds.map(id => {
-    let s;
-    if (model?.sections) {
-      s = model.sections.find(s => s.id === id);
-    } else {
-      // Backward compat: build on the fly from old fields
-      if (id === 'sfm' && model?.sfmCode) s = { title: 'SFM 代码', content: model.sfmCode, copyable: true };
-      if (id === 'pattern' && model?.patternProvider) s = { title: '样板供应器设置', content: model.patternProvider };
-    }
+    const s = model?.sections?.find(s => s.id === id);
     if (!s) return '';
     return `
     <div class="tooltip-code">

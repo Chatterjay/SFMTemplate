@@ -76,8 +76,10 @@ models/你的模板/
 {
   "id": "你的模板",
   "name": "你的模板",
-  "sfmCode": "every 60 ticks do\n\tinput from \"1\"\n\t...",
-  "patternProvider": null,
+  "sections": [
+    { "id": "sfm", "title": "SFM 代码", "fromDoc": true, "copyable": true },
+    { "id": "pattern", "title": "样板供应器设置", "fromDoc": true }
+  ],
   "labels": [
     { "label": "1", "meshes": ["minecraft:barrel"] },
     { "label": "2", "meshes": ["mod:id"] }
@@ -92,8 +94,13 @@ models/你的模板/
       "name": "方块显示名称",
       "mod": "所属 Mod",
       "desc": "功能描述",
-      "tabSfmCode": true,
-      "tabPatternProvider": true
+      "showSections": ["pattern"]
+    },
+    "sfm:manager": {
+      "name": "SFM 管理器",
+      "mod": "Super Factory Manager",
+      "desc": "运行 SFM 自动化程序",
+      "showSections": ["sfm"]
     }
   }
 }
@@ -105,19 +112,49 @@ models/你的模板/
 |------|------|
 | `id` | 唯一标识，必须与文件夹名一致 |
 | `name` | Tab 上显示的名称 |
-| `sfmCode` | SFM 自动化代码（tooltip 中显示） |
-| `patternProvider` | 样板供应器设置文本（没有则 `null`） |
+| `sections` | tooltip 中显示的代码/配置段，`fromDoc: true` 表示从 doc.md 读取 |
 | `labels` | 方块标签，对应 SFM 编号 |
 | `blocks` | 方块注册表，key 为 mesh 名称，value 为显示信息 |
 
-**blocks 中的特殊标记：**
+**blocks 中的 showSections：**
 
-- `tabSfmCode: true` — 在 tooltip 中显示当前模型的 sfmCode
-- `tabPatternProvider: true` — 在 tooltip 中显示当前模型的 patternProvider
+- `showSections: ["sfm"]` — 在 tooltip 中显示 `SFM 代码` 段
+- `showSections: ["pattern"]` — 在 tooltip 中显示 `样板供应器设置` 段
+- 可同时显示多个段：`showSections: ["sfm", "pattern", "factory"]`
 
-> 多个模板可以定义相同的 block key，系统会自动合并，后加载的覆盖先加载的。
+### 4. 编写 doc.md
 
-### 4. 特殊渲染处理（按需）
+SFM 代码和配置信息写在 `doc.md` 中，按 `##` 标题分段：
+
+```markdown
+# 你的模板
+
+## SFM 代码
+\`\`\`sfm
+every 60 ticks do
+    input from "1"
+    output to "2"
+end
+\`\`\`
+
+## 样板供应器设置
+- 阻挡模式：off
+- 锁定合成：off
+```
+
+doc.md 中 `##` 标题需与 sections 中的 `title` 对应，`fromDoc: true` 时会自动读取对应标题下的内容。
+
+### 5. 用脚本初始化（推荐）
+
+也可用脚本来初始化，会自动读取 GLB 提取 mesh 名称并生成骨架文件：
+
+```bash
+node scripts/init-model.mjs 你的模板
+```
+
+Windows 下也可直接拖拽 `scene.glb` 到 `scripts/init-model.bat` 上。
+
+### 6. 特殊渲染处理（按需）
 
 如果新模板的 mesh 需要特殊渲染处理，在 `src/config/index.js` 底部修改：
 
@@ -127,16 +164,13 @@ export const VISIBLE_BLOCKENTITIES = makeSet([
   'blockentity:mod:something',
 ]);
 
-// 对透明贴图的 mesh 启用 alpha test
-export const ALPHA_CLIP_MESHES = makeSet([
-  'mod:something',
-]);
-
 // 隐藏不需要显示的 mesh
 export const HIDDEN_MESHES = makeSet([
   'mod:hidden_mesh',
 ]);
 ```
+
+> 透明贴图渲染问题已自动处理，不再需要手动配置 ALPHA_CLIP_MESHES。
 
 ### 5. 验证
 
