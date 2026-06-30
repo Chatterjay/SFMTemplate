@@ -95,13 +95,6 @@ export const VISIBLE_BLOCKENTITIES = makeSet([
   'blockentity:ars_nouveau:arcane_core'
 ]);
 
-export const ALPHA_CLIP_MESHES = makeSet([
-  'ars_nouveau:creative_source_jar',
-  'blockentity:ars_nouveau:arcane_core',
-  'mekanism:ultimate_energy_cube',
-  'mekanism:ultimate_smelting_factory'
-]);
-
 export const HIDDEN_MESHES = makeSet([
   'ars_nouveau:imbuement_chamber'
 ]);

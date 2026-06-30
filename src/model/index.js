@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   VISIBLE_BLOCKENTITIES,
-  ALPHA_CLIP_MESHES,
   HIDDEN_MESHES
 } from '../config/index.js';
 
@@ -43,7 +42,9 @@ export function createModelManager(scene, controls, camera) {
         child.visible = false;
         return;
       }
-      if (ALPHA_CLIP_MESHES.has(child.name)) {
+      // Auto-fix alpha BLEND materials (transparent without alphaTest):
+      // force alpha test + depth write to prevent see-through issues
+      if (child.material.transparent && !child.material.alphaTest) {
         child.material.alphaTest = 0.5;
         child.material.transparent = false;
         child.material.depthWrite = true;
