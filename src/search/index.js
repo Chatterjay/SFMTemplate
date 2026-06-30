@@ -68,7 +68,7 @@ export function buildIndex(models, blockInfo) {
       namePy,
       nameIn,
     });
-    // Collect unique block names for this model
+    // Collect unique block names for this model from labels
     for (const l of m.labels || []) {
       for (const mesh of l.meshes) {
         const info = blockInfo[mesh] || blockInfo[mesh.replace(/:/g, '')];
@@ -80,16 +80,23 @@ export function buildIndex(models, blockInfo) {
         const bnPy = toPinyin(bn);
         const bnIn = toInitials(bn);
         items.push({
-          id: m.id,
-          type: 'block',
-          label: bn,
-          meshName: mesh,
-          sub: m.name,
-          name: bn,
-          namePy: bnPy,
-          nameIn: bnIn,
+          id: m.id, type: 'block', label: bn, meshName: mesh,
+          sub: m.name, name: bn, namePy: bnPy, nameIn: bnIn,
         });
       }
+    }
+    // Also add blocks not referenced by any label (e.g. decorative blocks)
+    for (const [mesh, info] of Object.entries(m.blocks || {})) {
+      const dedupKey = info.name + '|' + m.id;
+      if (seenBlock.has(dedupKey)) continue;
+      seenBlock.add(dedupKey);
+      const bn = info.name.replace(/\s*\(.*?\)\s*$/, '').trim();
+      const bnPy = toPinyin(bn);
+      const bnIn = toInitials(bn);
+      items.push({
+        id: m.id, type: 'block', label: bn, meshName: mesh,
+        sub: m.name, name: bn, namePy: bnPy, nameIn: bnIn,
+      });
     }
   }
 
@@ -143,6 +150,10 @@ style.textContent = `
 `;
 
 let input, drop;
+
+export function clearSearch() {
+  if (input) { input.value = ''; drop.innerHTML = ''; drop.classList.remove('show'); }
+}
 
 export function mountSearch(headerEl, { onSelect }) {
   headerEl.insertAdjacentHTML('beforeend', html);

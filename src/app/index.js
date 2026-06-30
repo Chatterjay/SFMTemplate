@@ -4,7 +4,7 @@ import { createModelManager } from '../model/index.js';
 import { createInteraction } from '../interaction/index.js';
 import { createUI } from '../ui/index.js';
 import { loadConfig, getModels, getDefaultModel, getBlockInfo, getBlockInfoMap, buildTooltipHtml } from '../config/index.js';
-import { buildIndex, mountSearch } from '../search/index.js';
+import { buildIndex, mountSearch, clearSearch } from '../search/index.js';
 
 /* ── DOM refs ── */
 const container = document.getElementById('canvas-container');
@@ -113,6 +113,7 @@ const sidebarHandlers = {
 async function switchModel(name) {
   if (modelMgr.getActiveModel() === name && modelMgr.getCurrentScene()) return;
 
+  clearSearch();
   interaction.unhighlightMesh(currentTooltipTarget);
   ui.hideTooltip(tooltipEl);
   ui.unhighlightLabelMeshes();
