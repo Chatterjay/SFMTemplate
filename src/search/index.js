@@ -51,6 +51,7 @@ function toInitials(text) {
 }
 
 let fuse;
+let _searchItems = [];
 
 export function buildIndex(models, blockInfo) {
   const items = [];
@@ -106,8 +107,9 @@ export function buildIndex(models, blockInfo) {
       { name: 'namePy', weight: 1 },
       { name: 'nameIn', weight: 1 },
     ],
-    threshold: 0.4,
+    threshold: 0.6,
   });
+  _searchItems = items;
 }
 
 /* ── DOM ── */
@@ -171,9 +173,29 @@ export function mountSearch(headerEl, { onSelect }) {
     const q = input.value;
     if (!q.trim()) { drop.innerHTML = ''; hide(); return; }
 
-    const results = fuse.search(q).slice(0, 8);
+    const ql = q.toLowerCase();
+    const fuseResults = fuse.search(q);
 
-    drop.innerHTML = results.map(({ item }) => `
+    // Also find literal substring matches (handles short CJK queries)
+    const seen = new Set();
+    const results = [];
+    for (const r of fuseResults) {
+      const key = r.item.label + '|' + r.item.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      results.push(r);
+    }
+    for (const item of _searchItems) {
+      if (results.length >= 8) break;
+      const key = item.label + '|' + item.id;
+      if (seen.has(key)) continue;
+      if (item.name.toLowerCase().includes(ql) || item.namePy.includes(ql) || item.nameIn.includes(ql)) {
+        seen.add(key);
+        results.push({ item });
+      }
+    }
+
+    drop.innerHTML = results.slice(0, 8).map(({ item }) => `
       <div class="${CLS}-item" data-id="${item.id}" data-type="${item.type}" data-label="${item.label}" data-mesh="${item.meshName || ''}">
         <span class="tag" style="background:${item.type === 'model' ? '#2a4a2a' : '#2a2a4a'};color:${item.type === 'model' ? '#4fc34f' : '#888'}">${item.type === 'model' ? '模' : '块'}</span>
         <span>${highlight(item.label, q)}</span>
