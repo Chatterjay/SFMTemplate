@@ -1,0 +1,48 @@
+{
+  "id": "MEK熔炼工厂",
+  "name": "MEK熔炼工厂",
+  "sfmCode": "every ticks do\n\tinput fe:: from \"1\" top side\n\toutput fe:: to \"2\" top side\nend\nevery 20 ticks do\n\tinput from \"3\"\n\toutput retain 256 to each \"2\" top side\n\tforget\n\tinput from \"2\" top side\n\toutput to \"4\" top side\nend",
+  "patternProvider": "- 阻挡模式：off\n- 锁定合成：off",
+  "labels": [
+    { "label": "1", "meshes": ["mekanism:ultimate_energy_cube"] },
+    { "label": "2", "meshes": ["mekanism:ultimate_smelting_factory"] },
+    { "label": "3", "meshes": ["minecraft:barrel"] },
+    { "label": "4", "meshes": ["extendedae:ex_pattern_provider"] }
+  ],
+  "blocks": {
+    "mekanism:ultimate_energy_cube": {
+      "name": "终极能量立方", "mod": "Mekanism",
+      "desc": "提供 FE 能量，为熔炼工厂供能"
+    },
+    "mekanism:ultimate_smelting_factory": {
+      "name": "终极熔炼工厂", "mod": "Mekanism",
+      "desc": "Mekanism 顶级熔炼设备，可同时处理大量物品"
+    },
+    "fluxnetworks:flux_point": {
+      "name": "Flux 网络节点", "mod": "Flux Networks",
+      "desc": "无线 FE 能量传输节点"
+    },
+    "extendedae:ex_pattern_provider": {
+      "name": "扩展样板供应器", "mod": "Extended AE",
+      "desc": "AE2 自动合成样板供应，输出成品至网络",
+      "tabPatternProvider": true
+    },
+    "minecraft:barrel": {
+      "name": "木桶", "mod": "Minecraft",
+      "desc": "物品暂存容器，输入待熔炼物品"
+    },
+    "minecraft:white_concrete": {
+      "name": "白色混凝土", "mod": "Minecraft",
+      "desc": "装饰 / 标记方块"
+    },
+    "sfm:cable": {
+      "name": "SFM 线缆", "mod": "Super Factory Manager",
+      "desc": "连接 SFM 管理器与各容器，传输物品信号"
+    },
+    "sfm:manager": {
+      "name": "SFM 管理器", "mod": "Super Factory Manager",
+      "desc": "运行 SFM 自动化程序，控制物品流向",
+      "tabSfmCode": true
+    }
+  }
+}
