@@ -194,7 +194,7 @@ export function mountSearch(headerEl, { onSelect }) {
 }
 
 function highlight(text, query) {
-  const q = query.toLowerCase();
+  let q = query.toLowerCase();
   const t = text.toLowerCase();
   let out = '', i = 0;
   for (let j = 0; j < t.length && i < text.length; j++) {
