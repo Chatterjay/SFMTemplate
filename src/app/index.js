@@ -197,8 +197,30 @@ function rebuildTabs(activeName) {
 /* ── Search ── */
 buildIndex(MODELS, BLOCK_INFO);
 mountSearch(document.querySelector('header'), {
-  onSelect: (modelId, type) => {
-    if (type === 'model' && modelId !== modelMgr.getActiveModel()) {
+  onSelect: (modelId, type, label, meshName) => {
+    /* Always clear current state before acting */
+    interaction.unhighlightMesh(currentTooltipTarget);
+    ui.hideTooltip(tooltipEl);
+    ui.unhighlightLabelMeshes();
+    currentTooltipTarget = null;
+    /* Force-reset emissive on all meshes (covers stale hoveredOriginalMaterials) */
+    for (const m of allMeshes) {
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      mats.forEach(mat => { if (mat.emissive) { mat.emissive.setHex(0); mat.emissiveIntensity = 0; } });
+    }
+
+    function focusBlock() {
+      const mesh = allMeshes.find(m =>
+        m.name === meshName || m.name === meshName.replace(/:/g, '')
+      );
+      if (mesh) sidebarHandlers.onFocus(mesh, mesh.name);
+    }
+
+    if (type === 'block' && modelId !== modelMgr.getActiveModel()) {
+      switchModel(modelId).then(focusBlock);
+    } else if (type === 'block') {
+      focusBlock();
+    } else if (modelId !== modelMgr.getActiveModel()) {
       switchModel(modelId);
     }
   },

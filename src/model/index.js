@@ -18,6 +18,9 @@ export function createModelManager(scene, controls, camera) {
     allMeshes = [];
     group.traverse(c => {
       if (c.isMesh && (c.visible || VISIBLE_BLOCKENTITIES.has(c.name))) {
+        // Reset emissive so cached models don't carry stale highlights
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach(m => { if (m.emissive) { m.emissive.setHex(0); m.emissiveIntensity = 0; } });
         allMeshes.push(c);
       }
     });

@@ -1,3 +1,5 @@
+import Fuse from 'fuse.js';
+
 const PINYIN_MAP = {
   '创': 'chuang', '造': 'zao', '之': 'zhi', '源': 'yuan',
   '罐': 'guan', '灌': 'guan', '注': 'zhu', '室': 'shi',
@@ -48,25 +50,16 @@ function toInitials(text) {
   return r.toLowerCase();
 }
 
-function fuzzyMatch(q, target) {
-  let j = 0;
-  for (let i = 0; i < target.length && j < q.length; i++) {
-    if (q[j] === target[i]) j++;
-  }
-  return j === q.length;
-}
-
-/* Search index: each entry knows how to match */
-const index = [];
+let fuse;
 
 export function buildIndex(models, blockInfo) {
-  index.length = 0;
+  const items = [];
   const seenBlock = new Set();
 
   for (const m of models) {
     const namePy = toPinyin(m.name);
     const nameIn = toInitials(m.name);
-    index.push({
+    items.push({
       id: m.id,
       type: 'model',
       label: m.name,
@@ -79,15 +72,18 @@ export function buildIndex(models, blockInfo) {
     for (const l of m.labels || []) {
       for (const mesh of l.meshes) {
         const info = blockInfo[mesh] || blockInfo[mesh.replace(/:/g, '')];
-        if (!info || seenBlock.has(info.name)) continue;
-        seenBlock.add(info.name);
+        if (!info) continue;
+        const dedupKey = info.name + '|' + m.id;
+        if (seenBlock.has(dedupKey)) continue;
+        seenBlock.add(dedupKey);
         const bn = info.name.replace(/\s*\(.*?\)\s*$/, '').trim();
         const bnPy = toPinyin(bn);
         const bnIn = toInitials(bn);
-        index.push({
+        items.push({
           id: m.id,
           type: 'block',
           label: bn,
+          meshName: mesh,
           sub: m.name,
           name: bn,
           namePy: bnPy,
@@ -96,17 +92,15 @@ export function buildIndex(models, blockInfo) {
       }
     }
   }
-}
 
-function scoreItem(q, item) {
-  const n = item.name.toLowerCase();
-  const ql = q.toLowerCase();
-  if (n.includes(ql)) return 100;
-  if (item.namePy.includes(ql)) return 80;
-  if (item.nameIn.includes(ql)) return 60;
-  if (fuzzyMatch(ql, n)) return 40;
-  if (fuzzyMatch(ql, item.namePy)) return 30;
-  return 0;
+  fuse = new Fuse(items, {
+    keys: [
+      { name: 'name', weight: 2 },
+      { name: 'namePy', weight: 1 },
+      { name: 'nameIn', weight: 1 },
+    ],
+    threshold: 0.4,
+  });
 }
 
 /* ── DOM ── */
@@ -166,13 +160,10 @@ export function mountSearch(headerEl, { onSelect }) {
     const q = input.value;
     if (!q.trim()) { drop.innerHTML = ''; hide(); return; }
 
-    const scored = index.map(item => ({ item, score: scoreItem(q, item) }))
-      .filter(x => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 8);
+    const results = fuse.search(q).slice(0, 8);
 
-    drop.innerHTML = scored.map(({ item }) => `
-      <div class="${CLS}-item" data-id="${item.id}" data-type="${item.type}">
+    drop.innerHTML = results.map(({ item }) => `
+      <div class="${CLS}-item" data-id="${item.id}" data-type="${item.type}" data-label="${item.label}" data-mesh="${item.meshName || ''}">
         <span class="tag" style="background:${item.type === 'model' ? '#2a4a2a' : '#2a2a4a'};color:${item.type === 'model' ? '#4fc34f' : '#888'}">${item.type === 'model' ? '模' : '块'}</span>
         <span>${highlight(item.label, q)}</span>
         ${item.sub ? `<span class="sub">${item.sub}</span>` : ''}
@@ -187,7 +178,7 @@ export function mountSearch(headerEl, { onSelect }) {
     if (!el) return;
     input.value = '';
     hide();
-    onSelect(el.dataset.id, el.dataset.type);
+    onSelect(el.dataset.id, el.dataset.type, el.dataset.label, el.dataset.mesh);
   });
 }
 
