@@ -3,8 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   VISIBLE_BLOCKENTITIES,
   ALPHA_CLIP_MESHES,
-  HIDDEN_MESHES,
-  DEFAULT_MODEL
+  HIDDEN_MESHES
 } from '../config/index.js';
 
 export function createModelManager(scene, controls, camera) {
@@ -12,7 +11,7 @@ export function createModelManager(scene, controls, camera) {
   const modelGroups = {};
   let currentScene = null;
   let allMeshes = [];
-  let activeModel = DEFAULT_MODEL;
+  let activeModel = '';
 
   function collectMeshes(group) {
     allMeshes = [];

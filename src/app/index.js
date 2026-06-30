@@ -3,7 +3,7 @@ import { createScene } from '../scene/index.js';
 import { createModelManager } from '../model/index.js';
 import { createInteraction } from '../interaction/index.js';
 import { createUI } from '../ui/index.js';
-import { getBlockInfo, MODELS, DEFAULT_MODEL, buildTooltipHtml, BLOCK_INFO } from '../config/index.js';
+import { loadConfig, getModels, getDefaultModel, getBlockInfo, getBlockInfoMap, buildTooltipHtml } from '../config/index.js';
 import { buildIndex, mountSearch } from '../search/index.js';
 
 /* ── DOM refs ── */
@@ -183,7 +183,7 @@ container.addEventListener('pointerleave', () => {
 const tabContainer = document.querySelector('.tabs');
 function rebuildTabs(activeName) {
   tabContainer.innerHTML = '';
-  for (const model of MODELS) {
+  for (const model of getModels()) {
     const btn = document.createElement('button');
     btn.className = 'tab-btn';
     if (model.id === activeName) btn.classList.add('active');
@@ -195,7 +195,6 @@ function rebuildTabs(activeName) {
 }
 
 /* ── Search ── */
-buildIndex(MODELS, BLOCK_INFO);
 mountSearch(document.querySelector('header'), {
   onSelect: (modelId, type, label, meshName) => {
     /* Always clear current state before acting */
@@ -255,6 +254,8 @@ function animate() {
 animate();
 
 /* ── Start ── */
-const savedModel = localStorage.getItem('sfm_active_model') || DEFAULT_MODEL;
+await loadConfig();
+buildIndex(getModels(), getBlockInfoMap());
+const savedModel = localStorage.getItem('sfm_active_model') || getDefaultModel();
 rebuildTabs(savedModel);
 switchModel(savedModel);

@@ -1,0 +1,64 @@
+{
+  "id": "附魔装置",
+  "name": "附魔装置",
+  "sfmCode": "every 20 ticks do\n\tinput from \"1\" slot 1-10\n\toutput to \"3\"\n\tforget\n\tinput from \"1\"\n\toutput to \"2\" slot 0\n\tforget\n\tinput  from \"2\"\n\toutput to \"4\"\nend",
+  "patternProvider": "- 阻挡模式：off\n- 锁定合成：on",
+  "labels": [
+    { "label": "1", "meshes": ["minecraft:barrel"] },
+    { "label": "2", "meshes": ["ars_nouveau:enchanting_apparatus", "blockentity:ars_nouveau:enchanting_apparatus"] },
+    { "label": "3", "meshes": ["ars_nouveau:arcane_platform"] },
+    { "label": "4", "meshes": ["extendedae:ex_pattern_provider"] }
+  ],
+  "blocks": {
+    "ars_nouveau:creative_source_jar": {
+      "name": "创造之源罐", "mod": "Ars Nouveau",
+      "desc": "提供无限源能，为灌注 / 附魔装置供能"
+    },
+    "ars_nouveau:arcane_core_emissive": {
+      "name": "奥术核心", "mod": "Ars Nouveau",
+      "desc": "附魔装置的核心组件，发光层"
+    },
+    "ars_nouveau:arcane_platform": {
+      "name": "奥术平台", "mod": "Ars Nouveau",
+      "desc": "放置被附魔物品的平台基座"
+    },
+    "ars_nouveau:enchanting_apparatus": {
+      "name": "附魔装置", "mod": "Ars Nouveau",
+      "desc": "附魔物品的主机器，需要周围 pedestal 配合"
+    },
+    "blockentity:ars_nouveau:arcane_core": {
+      "name": "奥术核心 (实体)", "mod": "Ars Nouveau",
+      "desc": "奥术核心的方块实体渲染层"
+    },
+    "blockentity:ars_nouveau:enchanting_apparatus": {
+      "name": "附魔装置 (实体)", "mod": "Ars Nouveau",
+      "desc": "附魔装置额外渲染层（旋转粒子等）"
+    },
+    "blockentity:ars_nouveau:enchanting_apparatus_2": {
+      "name": "附魔装置 (实体)", "mod": "Ars Nouveau",
+      "desc": "附魔装置动态模型渲染"
+    },
+    "extendedae:ex_pattern_provider": {
+      "name": "扩展样板供应器", "mod": "Extended AE",
+      "desc": "AE2 自动合成样板供应，阻挡模式控制物品输出",
+      "tabPatternProvider": true
+    },
+    "minecraft:barrel": {
+      "name": "木桶", "mod": "Minecraft",
+      "desc": "物品暂存容器，SFM 管理的输入 / 输出缓冲"
+    },
+    "minecraft:white_concrete": {
+      "name": "白色混凝土", "mod": "Minecraft",
+      "desc": "装饰 / 标记方块，用于区域标识"
+    },
+    "sfm:cable": {
+      "name": "SFM 线缆", "mod": "Super Factory Manager",
+      "desc": "连接 SFM 管理器与各容器，传输物品信号"
+    },
+    "sfm:manager": {
+      "name": "SFM 管理器", "mod": "Super Factory Manager",
+      "desc": "运行 SFM 自动化程序，控制物品流向",
+      "tabSfmCode": true
+    }
+  }
+}
