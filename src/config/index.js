@@ -52,23 +52,33 @@ export function getModColor(mod) {
 
 export function buildTooltipHtml(info, meshName, activeModel) {
   const model = getModel(activeModel);
-  const sfmCode = info.tabSfmCode ? model?.sfmCode : null;
-  const codeHtml = sfmCode ? `
+
+  // Collect section IDs to show for this block (new-style + backward compat)
+  const showIds = [...(info.showSections || [])];
+  if (info.tabSfmCode && !showIds.includes('sfm')) showIds.push('sfm');
+  if (info.tabPatternProvider && !showIds.includes('pattern')) showIds.push('pattern');
+
+  // Build sections from model data
+  const sectionsHtml = showIds.map(id => {
+    let s;
+    if (model?.sections) {
+      s = model.sections.find(s => s.id === id);
+    } else {
+      // Backward compat: build on the fly from old fields
+      if (id === 'sfm' && model?.sfmCode) s = { title: 'SFM 代码', content: model.sfmCode, copyable: true };
+      if (id === 'pattern' && model?.patternProvider) s = { title: '样板供应器设置', content: model.patternProvider };
+    }
+    if (!s) return '';
+    return `
     <div class="tooltip-code">
       <div class="tooltip-code-header">
-        <span>SFM 代码</span>
-        <button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>
+        <span>${s.title}</span>
+        ${s.copyable ? `<button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent);this.textContent='已复制';setTimeout(()=>this.textContent='复制',1500)">复制</button>` : ''}
       </div>
-      <pre>${sfmCode}</pre>
-    </div>` : '';
-  const ppText = info.tabPatternProvider ? model?.patternProvider : null;
-  const ppHtml = ppText ? `
-    <div class="tooltip-code">
-      <div class="tooltip-code-header">
-        <span>样板供应器设置</span>
-      </div>
-      <pre>${ppText}</pre>
-    </div>` : '';
+      <pre>${s.content}</pre>
+    </div>`;
+  }).join('');
+
   return `
     <div class="tooltip-head">
       <div class="tooltip-name">${info.name}</div>
@@ -77,8 +87,7 @@ export function buildTooltipHtml(info, meshName, activeModel) {
     <div class="tooltip-body">
       ${info.desc ? `<div class="tooltip-desc">${info.desc}</div>` : ''}
       <div class="tooltip-id">${meshName}</div>
-      ${codeHtml}
-      ${ppHtml}
+      ${sectionsHtml}
     </div>
   `;
 }
