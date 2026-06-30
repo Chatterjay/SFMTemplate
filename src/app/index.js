@@ -3,7 +3,8 @@ import { createScene } from '../scene/index.js';
 import { createModelManager } from '../model/index.js';
 import { createInteraction } from '../interaction/index.js';
 import { createUI } from '../ui/index.js';
-import { getBlockInfo, MODELS, DEFAULT_MODEL, buildTooltipHtml } from '../config/index.js';
+import { getBlockInfo, MODELS, DEFAULT_MODEL, buildTooltipHtml, BLOCK_INFO } from '../config/index.js';
+import { buildIndex, mountSearch } from '../search/index.js';
 
 /* ── DOM refs ── */
 const container = document.getElementById('canvas-container');
@@ -192,6 +193,16 @@ function rebuildTabs(activeName) {
     tabContainer.appendChild(btn);
   }
 }
+
+/* ── Search ── */
+buildIndex(MODELS, BLOCK_INFO);
+mountSearch(document.querySelector('header'), {
+  onSelect: (modelId, type) => {
+    if (type === 'model' && modelId !== modelMgr.getActiveModel()) {
+      switchModel(modelId);
+    }
+  },
+});
 
 /* ── Auto-rotate toggle ── */
 rotateBtn.classList.toggle('on', controls.autoRotate);
